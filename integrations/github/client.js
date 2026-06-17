@@ -138,6 +138,34 @@ async function getFileCommits(owner, repo, path, limit = 5) {
   }
 }
 
+async function createCheckRun(owner, repo, { name, headSha, status, conclusion, output }) {
+  const client = getClient();
+  try {
+    const response = await client.post(`/repos/${owner}/${repo}/check-runs`, {
+      name,
+      head_sha: headSha,
+      status,
+      conclusion,
+      output
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error creating GitHub Check Run for ${headSha}:`, error.message);
+    throw error;
+  }
+}
+
+async function getPRReviews(owner, repo, prNumber) {
+  const client = getClient();
+  try {
+    const response = await client.get(`/repos/${owner}/${repo}/pulls/${prNumber}/reviews`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching PR reviews for PR #${prNumber}:`, error.message);
+    throw error;
+  }
+}
+
 module.exports = {
   getWorkflowLogs,
   getCommitDiff,
@@ -145,4 +173,6 @@ module.exports = {
   createPRComment,
   getCommit,
   getFileCommits,
+  createCheckRun,
+  getPRReviews,
 };
