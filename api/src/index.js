@@ -10,7 +10,11 @@ const port = process.env.APP_PORT || 3000;
 // Middleware
 app.use(helmet());
 app.use(cors());
-app.use(express.json());
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 app.use(morgan('combined'));
 
 // Basic Health Check Route

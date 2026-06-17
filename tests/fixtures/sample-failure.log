@@ -1,0 +1,26 @@
+2026-06-17T15:58:00.1234567Z ##[group]Run npm install
+2026-06-17T15:58:01.1234567Z [33mwarn[0m deprecated library-a@1.0.0
+2026-06-17T15:58:02.1234567Z added 120 packages in 2s
+2026-06-17T15:58:03.1234567Z ##[group]Run npm run test
+2026-06-17T15:58:04.1234567Z 
+2026-06-17T15:58:05.1234567Z > pipelinedoc@1.0.0 test
+2026-06-17T15:58:05.1234567Z > jest
+2026-06-17T15:58:05.1234567Z 
+2026-06-17T15:58:06.1234567Z [31mFAIL[0m tests/api.test.js
+2026-06-17T15:58:06.1234567Z   ● API - Health Check
+2026-06-17T15:58:06.1234567Z 
+2026-06-17T15:58:06.1234567Z     Expected status to be 200 but got 500
+2026-06-17T15:58:06.1234567Z 
+2026-06-17T15:58:06.1234567Z       at Object.<anonymous> (tests/api.test.js:12:24)
+2026-06-17T15:58:06.1234567Z 
+2026-06-17T15:58:06.1234567Z [1m[31m  ● API - Connection Test[22m[39m
+2026-06-17T15:58:06.1234567Z     
+2026-06-17T15:58:06.1234567Z     Error: connect ECONNREFUSED 127.0.0.1:5432
+2026-06-17T15:58:06.1234567Z 
+2026-06-17T15:58:06.1234567Z       at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1494:16)
+2026-06-17T15:58:06.1234567Z 
+2026-06-17T15:58:06.1234567Z Test Suites: [31m1 failed[0m, 1 passed, 2 total
+2026-06-17T15:58:06.1234567Z Tests:       [31m2 failed[0m, 5 passed, 7 total
+2026-06-17T15:58:06.1234567Z Snapshots:   0 total
+2026-06-17T15:58:06.1234567Z Time:        1.45s
+2026-06-17T15:58:06.1234567Z npm ERR! Lifecycle script `test` failed with exit code 1.
