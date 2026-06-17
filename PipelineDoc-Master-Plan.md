@@ -322,34 +322,34 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 1.1 — GitHub Webhook Integration
 **Assigned to:** `@IntegrationAgent`
 
-- [ ] **1.1.1** Create `integrations/github/webhook.js` — receives GitHub webhook events
+- [x] **1.1.1** Create `integrations/github/webhook.js` — receives GitHub webhook events
   - Events to listen: `workflow_run`, `check_run`, `push`, `pull_request`
   - Verify webhook signature using `GITHUB_WEBHOOK_SECRET`
   - Route events to appropriate handlers
 
-- [ ] **1.1.2** Register webhook on your GitHub repo:
+- [x] **1.1.2** Register webhook on your GitHub repo:
   - Go to repo Settings → Webhooks → Add webhook
   - Payload URL: `https://YOUR_OCI_IP:3000/webhooks/github`
   - Content type: `application/json`
   - Secret: value from `.env`
   - Events: Workflow runs, Check runs, Pull requests
 
-- [ ] **1.1.3** Test webhook by pushing a commit and verifying the server receives the event (log it to console first)
+- [x] **1.1.3** Test webhook by pushing a commit and verifying the server receives the event (log it to console first)
 
-- [ ] **1.1.4** Create `integrations/github/client.js` — GitHub API client:
+- [x] **1.1.4** Create `integrations/github/client.js` — GitHub API client:
   - `getWorkflowLogs(owner, repo, runId)` → fetches raw logs from GitHub Actions
   - `getCommitDiff(owner, repo, sha)` → fetches the diff for a commit
   - `getPRDetails(owner, repo, prNumber)` → fetches PR metadata
   - `createPRComment(owner, repo, prNumber, body)` → posts comment on PR
 
-- [ ] **1.1.5** Write unit test for each GitHub client function using mock data in `tests/integrations/github.test.js`
+- [x] **1.1.5** Write unit test for each GitHub client function using mock data in `tests/integrations/github.test.js`
 
 ---
 
 ### 1.2 — Log Ingestion Pipeline
 **Assigned to:** `@AnalysisAgent`
 
-- [ ] **1.2.1** Create `agents/analysis/log-ingester.js`:
+- [x] **1.2.1** Create `agents/analysis/log-ingester.js`:
   - Input: raw GitHub Actions log text (can be very long, 50k+ tokens)
   - Step 1: Strip ANSI color codes from logs
   - Step 2: Remove timestamp prefixes
@@ -358,19 +358,19 @@ These are the subagents. Each one owns specific tasks in the plan below.
   - Step 5: Truncate to 8000 tokens max for Claude API input
   - Output: structured object `{ sections: [], errors: [], warnings: [], truncated: boolean }`
 
-- [ ] **1.2.2** Create `agents/analysis/diff-parser.js`:
+- [x] **1.2.2** Create `agents/analysis/diff-parser.js`:
   - Input: raw git diff text
   - Extracts: list of changed files, lines added/removed per file, new function names added
   - Output: `{ files: [{path, additions, deletions, isNew, isDeleted}], summary: string }`
 
-- [ ] **1.2.3** Test log-ingester with a real GitHub Actions failure log (save one as `tests/fixtures/sample-failure.log`)
+- [x] **1.2.3** Test log-ingester with a real GitHub Actions failure log (save one as `tests/fixtures/sample-failure.log`)
 
 ---
 
 ### 1.3 — Root Cause Analysis Engine
 **Assigned to:** `@AnalysisAgent`
 
-- [ ] **1.3.1** Create `agents/analysis/rca-engine.js` — the core Failure Doctor:
+- [x] **1.3.1** Create `agents/analysis/rca-engine.js` — the core Failure Doctor:
   - Function: `analyzeFailure({ logs, diff, commitMessage, previousRuns })`
   - Calls Claude API (model: `claude-sonnet-4-6`) with the following system prompt:
     ```
@@ -397,17 +397,17 @@ These are the subagents. Each one owns specific tasks in the plan below.
     }
     ```
 
-- [ ] **1.3.2** Add retry logic — if Claude API call fails, retry up to 3 times with exponential backoff (1s, 2s, 4s)
+- [x] **1.3.2** Add retry logic — if Claude API call fails, retry up to 3 times with exponential backoff (1s, 2s, 4s)
 
-- [ ] **1.3.3** Save every RCA result to `incidents` table in Postgres with `raw_logs`, `root_cause`, `type`
+- [x] **1.3.3** Save every RCA result to `incidents` table in Postgres with `raw_logs`, `root_cause`, `type`
 
-- [ ] **1.3.4** Create `agents/analysis/blame-attribution.js`:
+- [x] **1.3.4** Create `agents/analysis/blame-attribution.js`:
   - Input: commit SHA, RCA result
   - Calls GitHub API to get commit author from the SHA
   - Checks the last 5 commits to the affected file
   - Output: `{ author_email, author_name, commit_sha, blame_confidence }`
 
-- [ ] **1.3.5** Create `agents/analysis/flaky-detector.js`:
+- [x] **1.3.5** Create `agents/analysis/flaky-detector.js`:
   - Queries last 10 runs of the same workflow from `incidents` table
   - If same error appears >3 times in 10 runs: flag as flaky, confidence = high
   - If same error appeared and passed on retry: flag as flaky
@@ -418,7 +418,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 1.4 — Failure Notification
 **Assigned to:** `@IntegrationAgent`
 
-- [ ] **1.4.1** Create `integrations/slack/client.js`:
+- [x] **1.4.1** Create `integrations/slack/client.js`:
   - Function: `sendDiagnosisAlert(channel, diagnosis)` — posts formatted Slack message
   - Format must include:
     - ❌ header with repo name and branch
@@ -429,16 +429,16 @@ These are the subagents. Each one owns specific tasks in the plan below.
     - Link to GitHub Actions run
     - "Is Flaky?" indicator if applicable
 
-- [ ] **1.4.2** Create Slack App at api.slack.com:
+- [x] **1.4.2** Create Slack App at api.slack.com:
   - Bot Token Scopes: `chat:write`, `channels:read`, `files:write`
   - Install to your workspace
   - Copy `SLACK_BOT_TOKEN` and `SLACK_SIGNING_SECRET` to `.env`
 
-- [ ] **1.4.3** Create `integrations/github/pr-commenter.js`:
+- [x] **1.4.3** Create `integrations/github/pr-commenter.js`:
   - After RCA on a PR, post a comment to the PR with the diagnosis
   - Comment format: collapsible `<details>` block with full diagnosis + fix suggestions
 
-- [ ] **1.4.4** Wire everything together in `agents/orchestrator/failure-flow.js`:
+- [x] **1.4.4** Wire everything together in `agents/orchestrator/failure-flow.js`:
   ```
   GitHub webhook (workflow_run failed)
     → fetch logs (IntegrationAgent)
@@ -455,11 +455,11 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ---
 
 ### ✅ Phase 1 Done When:
-- [ ] Push a commit that breaks CI → Slack message received within 60 seconds with diagnosis
-- [ ] Diagnosis includes root cause, failure type, fix suggestion
-- [ ] PR gets a comment with the diagnosis
-- [ ] Incident saved to Postgres `incidents` table
-- [ ] Flaky test detection working on repeated failures
+- [x] Push a commit that breaks CI → Slack message received within 60 seconds with diagnosis
+- [x] Diagnosis includes root cause, failure type, fix suggestion
+- [x] PR gets a comment with the diagnosis
+- [x] Incident saved to Postgres `incidents` table
+- [x] Flaky test detection working on repeated failures
 
 ---
 
