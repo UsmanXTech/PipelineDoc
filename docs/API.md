@@ -163,3 +163,117 @@ data: {"type": "text", "text": "All metrics are within stable boundaries."}
 
 data: [DONE]
 ```
+
+---
+
+## 6. UiPath Cloud Orchestrator Integration API
+
+### `GET /api/uipath`
+Checks connection mode (mock/live) and lists active unattended robots and mapped processes.
+- **Response (200 OK)**:
+```json
+{
+  "status": "Connected",
+  "connectionMode": "Simulation (Local Mock)",
+  "organizationId": "pipelinedoc-org",
+  "tenantName": "pipelinedoc-tenant",
+  "clientIdObfuscated": "client...",
+  "uipathHost": "https://cloud.uipath.com",
+  "folderPath": "Shared/Orchestrator_Unit_1",
+  "activeRobots": [
+    { "name": "Robot_Maestro_01", "status": "Available", "type": "Unattended" }
+  ],
+  "mappedProcesses": [
+    { "key": "FailureDoctorFlow", "processName": "UiPath_FailureDoctorFlowProcess", "description": "GitHub workflow failure diagnostics RCA agent" }
+  ]
+}
+```
+
+### `GET /api/uipath/jobs`
+Fetches a list of executed unattended robot runs and their execution states.
+- **Response (200 OK)**:
+```json
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "job_id": "job-manual-1234",
+    "process_name": "FailureDoctorFlow",
+    "robot_name": "Robot_Maestro_01",
+    "state": "Successful",
+    "input_arguments": { "repo": "payment-service" },
+    "output_arguments": { "rca_result": "Success" },
+    "start_time": "2026-06-20T10:00:00Z",
+    "end_time": "2026-06-20T10:00:15Z",
+    "created_at": "2026-06-20T10:00:00Z"
+  }
+]
+```
+
+### `GET /api/uipath/queues`
+Fetches items from the transaction processing queues tracking status and exceptions.
+- **Response (200 OK)**:
+```json
+[
+  {
+    "id": "da6f7f46-fb4b-43b0-8ca9-79fba6deacbe",
+    "queue_name": "Deployment_Artifact_Verification_Queue",
+    "reference": "db79aca1-abce-4934-b642-844ff7c77b2a",
+    "status": "InProgress",
+    "exception_type": null,
+    "exception_reason": null,
+    "processing_duration_ms": null,
+    "created_at": "2026-06-20T07:32:15Z"
+  }
+]
+```
+
+### `GET /api/uipath/summary`
+Calculates and returns aggregated metrics for jobs and queue items.
+- **Response (200 OK)**:
+```json
+{
+  "jobs": {
+    "total": 31,
+    "success": 29,
+    "faulted": 2
+  },
+  "queues": {
+    "total": 18,
+    "success": 16,
+    "failed": 2,
+    "businessExceptions": 1,
+    "appExceptions": 1,
+    "avgDurationMs": 1520
+  }
+}
+```
+
+### `POST /api/uipath/jobs/trigger`
+Manually starts a specific unattended Orchestration process on an active robot.
+- **Request Body**:
+```json
+{
+  "processName": "FailureDoctorFlow",
+  "inputArguments": { "repo": "payment-service" }
+}
+```
+- **Response (200 OK)**:
+```json
+{
+  "success": true,
+  "jobId": "job-manual-9012",
+  "state": "Successful",
+  "robot": "Robot_Maestro_01",
+  "message": "Successfully executed manual UiPath job run job-manual-9012 for process FailureDoctorFlow"
+}
+```
+
+---
+
+## 7. AI Chatbot Autopilot Tools
+
+The conversational AI chatbot uses the following built-in tools to interact with the UiPath cloud layer:
+- **`get_uipath_status`**: Queries connection parameters, robot health status, and active mappings.
+- **`get_uipath_jobs`**: Queries the status of running or completed unattended orchestrator jobs.
+- **`trigger_uipath_job`**: Triggers a new unattended process run on a robot.
+
