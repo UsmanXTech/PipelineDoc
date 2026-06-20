@@ -475,7 +475,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 2.1 — Risk Scoring Engine
 **Assigned to:** `@GatekeeperAgent`
 
-- [ ] **2.1.1** Create `agents/gatekeeper/risk-scorer.js`:
+- [x] **2.1.1** Create `agents/gatekeeper/risk-scorer.js`:
   - Input: PR diff, changed files list, author history from DB
   - Scoring model (0–100, higher = riskier):
     - Files changed > 20: +20 points
@@ -488,19 +488,19 @@ These are the subagents. Each one owns specific tasks in the plan below.
     - Config files changed (`.env`, `docker-compose`, `terraform`): +20 points
   - Risk levels: `low (0-30)` | `medium (31-60)` | `high (61-80)` | `critical (81-100)`
 
-- [ ] **2.1.2** Create `agents/gatekeeper/breaking-change-detector.js`:
+- [x] **2.1.2** Create `agents/gatekeeper/breaking-change-detector.js`:
   - Checks if any exported function signatures changed (TypeScript AST parsing)
   - Checks if REST API routes were removed or parameters changed
   - Checks if DB schema columns were dropped or renamed (look for `DROP COLUMN`, `RENAME`)
   - Checks if environment variable names were changed
   - Output: `{ has_breaking_changes: boolean, changes: [{ type, description, file }] }`
 
-- [ ] **2.1.3** Create `agents/gatekeeper/dependency-scanner.js`:
+- [x] **2.1.3** Create `agents/gatekeeper/dependency-scanner.js`:
   - Reads `package.json` or `requirements.txt` diff
   - Calls Snyk API (free tier) or OSV.dev API (free) to check for known CVEs in new/updated packages
   - Output: `{ vulnerabilities: [{ package, version, severity, cve_id, fix_version }] }`
 
-- [ ] **2.1.4** Create `agents/gatekeeper/secret-detector.js`:
+- [x] **2.1.4** Create `agents/gatekeeper/secret-detector.js`:
   - Scans diff for patterns: API keys, JWT secrets, passwords in code
   - Patterns to detect: `sk-`, `AIza`, `AKIA`, `ghp_`, base64 strings >40 chars, strings containing `password=` or `secret=`
   - Output: `{ secrets_found: boolean, findings: [{ file, line, pattern_type }] }`
@@ -510,7 +510,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 2.2 — Pre-Deploy Gate Decision
 **Assigned to:** `@GatekeeperAgent`
 
-- [ ] **2.2.1** Create `agents/gatekeeper/gate-decision.js`:
+- [x] **2.2.1** Create `agents/gatekeeper/gate-decision.js`:
   - Aggregates: risk score + breaking changes + vulnerabilities + secret scan
   - Decision rules:
     - `secrets_found = true` → **BLOCK** (no exceptions)
@@ -520,12 +520,12 @@ These are the subagents. Each one owns specific tasks in the plan below.
     - `risk_score 0-60` → **PASS**
   - Output: `{ decision: PASS|WARN|BLOCK, reason: string, risk_score: number, details: {} }`
 
-- [ ] **2.2.2** Create GitHub Status Check integration:
+- [x] **2.2.2** Create GitHub Status Check integration:
   - For every PR, create a GitHub Check Run named `PipelineDoc / Gate`
   - Status: `success` (PASS), `neutral` (WARN), `failure` (BLOCK)
   - Include full gate report in check details
 
-- [ ] **2.2.3** Create override mechanism:
+- [x] **2.2.3** Create override mechanism:
   - If a PR has label `gate-override` AND is approved by 2 reviewers, allow blocked PRs through
   - Log all overrides to `incidents` table with type `gate_override`
 
@@ -534,27 +534,27 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 2.3 — UiPath Test Cloud Integration
 **Assigned to:** `@TestAgent`
 
-- [ ] **2.3.1** Create `integrations/uipath/test-cloud.js`:
+- [x] **2.3.1** Create `integrations/uipath/test-cloud.js`:
   - Function: `triggerTestSuite(suiteId, environment)` → starts a test suite run
   - Function: `pollTestResults(executionId)` → polls every 15s until complete
   - Function: `getTestReport(executionId)` → returns pass/fail/flaky per test case
 
-- [ ] **2.3.2** Authenticate with UiPath Automation Cloud:
+- [x] **2.3.2** Authenticate with UiPath Automation Cloud:
   - Use Client Credentials OAuth2 flow
   - Endpoint: `https://account.uipath.com/oauth/token`
   - Store token in Redis with TTL = expiry - 60s (auto-refresh)
 
-- [ ] **2.3.3** Wire test results into gate decision:
+- [x] **2.3.3** Wire test results into gate decision:
   - If test suite fails: add +40 to risk score
   - If flaky tests detected by UiPath Test Cloud: add +15
 
 ---
 
 ### ✅ Phase 2 Done When:
-- [ ] Open a PR with a hardcoded secret → PR gets BLOCKED with GitHub Check
-- [ ] Open a PR touching auth files → PR gets WARN with risk score shown
-- [ ] Clean PR → GitHub Check shows PASS with risk score 0-30
-- [ ] UiPath Test Cloud suite triggers on new PRs and result feeds into gate
+- [x] Open a PR with a hardcoded secret → PR gets BLOCKED with GitHub Check
+- [x] Open a PR touching auth files → PR gets WARN with risk score shown
+- [x] Clean PR → GitHub Check shows PASS with risk score 0-30
+- [x] UiPath Test Cloud suite triggers on new PRs and result feeds into gate
 
 ---
 
@@ -570,7 +570,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 3.1 — Strategy Selector
 **Assigned to:** `@PlannerAgent`
 
-- [ ] **3.1.1** Create `agents/planner/strategy-selector.js`:
+- [x] **3.1.1** Create `agents/planner/strategy-selector.js`:
   - Input: risk score, changed services, number of users affected, time of day
   - Strategy rules:
     - `risk_score >= 61`: **canary** (5% → 25% → 100% with health checks between)
@@ -579,12 +579,12 @@ These are the subagents. Each one owns specific tasks in the plan below.
     - DB migration present: **maintenance window** (drain traffic, migrate, deploy, restore)
   - Output: `{ strategy: string, stages: [{ traffic_percent, wait_minutes, health_checks }] }`
 
-- [ ] **3.1.2** Create `agents/planner/time-window-advisor.js`:
+- [x] **3.1.2** Create `agents/planner/time-window-advisor.js`:
   - Queries `deployments` table for historical traffic patterns by hour/day
   - Recommends lowest-traffic 2-hour windows for the next 48 hours
   - Output: `{ recommended_windows: [{ start, end, risk_level, reason }] }`
 
-- [ ] **3.1.3** Create `agents/planner/dependency-resolver.js`:
+- [x] **3.1.3** Create `agents/planner/dependency-resolver.js`:
   - For multi-service repos (monorepo), reads `SERVICE_DEPENDENCIES` config
   - Topologically sorts services so dependencies deploy before dependents
   - Output: `{ deploy_order: ["service-a", "service-b", "service-c"], dependency_graph: {} }`
@@ -594,7 +594,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 3.2 — Rollback Plan Generator
 **Assigned to:** `@PlannerAgent`
 
-- [ ] **3.2.1** Create `agents/planner/rollback-planner.js`:
+- [x] **3.2.1** Create `agents/planner/rollback-planner.js`:
   - CRITICAL: Generates rollback steps BEFORE deploy starts, not after failure
   - For each deploy, creates:
     - Previous image tag/commit SHA to roll back to
@@ -603,7 +603,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
     - DNS/load balancer settings to restore
   - Saves rollback plan to `deployments` table before deploy begins
 
-- [ ] **3.2.2** Create rollback plan JSON schema:
+- [x] **3.2.2** Create rollback plan JSON schema:
   ```json
   {
     "deployment_id": "uuid",
@@ -621,14 +621,14 @@ These are the subagents. Each one owns specific tasks in the plan below.
   }
   ```
 
-- [ ] **3.2.3** Store rollback plan encrypted at rest in Postgres using `pgcrypto`
+- [x] **3.2.3** Store rollback plan encrypted at rest in Postgres using `pgcrypto`
 
 ---
 
 ### 3.3 — Deploy Execution Coordination
 **Assigned to:** `@PlannerAgent` + `@OrchestratorAgent`
 
-- [ ] **3.3.1** Create `agents/planner/deploy-coordinator.js`:
+- [x] **3.3.1** Create `agents/planner/deploy-coordinator.js`:
   - Reads strategy + rollback plan
   - Executes deploy stages in order:
     1. Pre-deploy: run health check on current prod
@@ -638,17 +638,17 @@ These are the subagents. Each one owns specific tasks in the plan below.
     5. If unhealthy: immediately trigger rollback plan
   - Emit events at each stage to Slack
 
-- [ ] **3.3.2** Create deploy status endpoint `GET /api/deployments/:id/status` → returns live deploy stage
+- [x] **3.3.2** Create deploy status endpoint `GET /api/deployments/:id/status` → returns live deploy stage
 
-- [ ] **3.3.3** Write deploy history to `deployments` table at each stage change
+- [x] **3.3.3** Write deploy history to `deployments` table at each stage change
 
 ---
 
 ### ✅ Phase 3 Done When:
-- [ ] A high-risk PR deploy triggers canary strategy automatically
-- [ ] Rollback plan is generated and saved before deploy starts
-- [ ] Slack receives stage-by-stage deploy progress messages
-- [ ] Deploy status API returns live stage info
+- [x] A high-risk PR deploy triggers canary strategy automatically
+- [x] Rollback plan is generated and saved before deploy starts
+- [x] Slack receives stage-by-stage deploy progress messages
+- [x] Deploy status API returns live stage info
 
 ---
 
@@ -664,7 +664,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 4.1 — Metrics Ingestion
 **Assigned to:** `@MonitorAgent`
 
-- [ ] **4.1.1** Create `agents/monitor/metrics-collector.js`:
+- [x] **4.1.1** Create `agents/monitor/metrics-collector.js`:
   - Connects to Prometheus API (if available) or CloudWatch (OCI Monitoring)
   - Polls every 30 seconds for:
     - HTTP error rate (5xx count / total requests)
@@ -674,7 +674,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
     - Pod restart count (K8s)
   - Stores time-series in Redis with 24h TTL (ring buffer per metric)
 
-- [ ] **4.1.2** Create `agents/monitor/log-streamer.js`:
+- [x] **4.1.2** Create `agents/monitor/log-streamer.js`:
   - Tails production logs from CloudWatch Logs or a log aggregator
   - Filters for ERROR and FATAL lines
   - Groups identical errors (same message, same file) into buckets
@@ -685,7 +685,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 4.2 — Anomaly Detection
 **Assigned to:** `@MonitorAgent`
 
-- [ ] **4.2.1** Create `agents/monitor/anomaly-detector.js`:
+- [x] **4.2.1** Create `agents/monitor/anomaly-detector.js`:
   - Baseline calculation: rolling average of last 7 days same time window
   - Anomaly thresholds:
     - Error rate > baseline × 3: **ALERT**
@@ -695,13 +695,13 @@ These are the subagents. Each one owns specific tasks in the plan below.
     - New error message not seen before: **ALERT**
   - Deduplication: same alert not re-fired within 15 minutes
 
-- [ ] **4.2.2** Create `agents/monitor/predictive-analyzer.js`:
+- [x] **4.2.2** Create `agents/monitor/predictive-analyzer.js`:
   - Memory trend: linear regression over last 2 hours
   - If projected to hit 100% within 4 hours: fire PREDICTIVE alert
   - Disk space trend: same logic
   - Alert payload: `{ type: "predictive", metric, current_value, projected_breach_at, confidence }`
 
-- [ ] **4.2.3** Create `agents/monitor/correlated-alerter.js`:
+- [x] **4.2.3** Create `agents/monitor/correlated-alerter.js`:
   - Groups alerts that fire within 2 minutes of each other into one INCIDENT
   - Avoids alert storms (50 notifications for one outage → 1 incident notification)
   - Each incident has: severity (P1/P2/P3/P4), affected_services, started_at
@@ -711,7 +711,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 4.3 — SLO Tracking
 **Assigned to:** `@MonitorAgent`
 
-- [ ] **4.3.1** Create `agents/monitor/slo-tracker.js`:
+- [x] **4.3.1** Create `agents/monitor/slo-tracker.js`:
   - Define SLOs in `config/slos.json`:
     ```json
     [
@@ -723,15 +723,15 @@ These are the subagents. Each one owns specific tasks in the plan below.
   - Alert when error budget < 20% remaining
   - Alert when burn rate > 14.4× (will exhaust budget in 2 hours)
 
-- [ ] **4.3.2** Expose `GET /api/slos` endpoint → returns all SLOs with current compliance %
+- [x] **4.3.2** Expose `GET /api/slos` endpoint → returns all SLOs with current compliance %
 
 ---
 
 ### ✅ Phase 4 Done When:
-- [ ] Manually spike error rate in staging → Slack alert fires within 90 seconds
-- [ ] Correlated alerts group into single incident notification
-- [ ] SLO dashboard shows real compliance %
-- [ ] Predictive alert fires when memory trend is climbing
+- [x] Manually spike error rate in staging → Slack alert fires within 90 seconds
+- [x] Correlated alerts group into single incident notification
+- [x] SLO dashboard shows real compliance %
+- [x] Predictive alert fires when memory trend is climbing
 
 ---
 
@@ -747,7 +747,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 5.1 — Auto-Rollback
 **Assigned to:** `@HealerAgent`
 
-- [ ] **5.1.1** Create `agents/healer/auto-rollback.js`:
+- [x] **5.1.1** Create `agents/healer/auto-rollback.js`:
   - Trigger condition: error rate > 10× baseline for > 3 minutes post-deploy
   - Actions:
     1. Fetch rollback plan from `deployments` table for most recent deploy
@@ -758,7 +758,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
   - All rollback actions logged to `incidents` table with type `auto_rollback`
   - Add 5-minute human override window before rollback executes (Slack button: "Cancel Rollback")
 
-- [ ] **5.1.2** Create Slack interactive button handler `POST /webhooks/slack/actions`:
+- [x] **5.1.2** Create Slack interactive button handler `POST /webhooks/slack/actions`:
   - Handle "Cancel Rollback" button within 5-minute window
   - Handle "Approve Rollback Now" button to skip waiting
 
@@ -767,7 +767,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 5.2 — Self-Healing Actions
 **Assigned to:** `@HealerAgent`
 
-- [ ] **5.2.1** Create `agents/healer/healing-actions.js` — library of healing actions:
+- [x] **5.2.1** Create `agents/healer/healing-actions.js` — library of healing actions:
   ```javascript
   const HEALING_ACTIONS = {
     pod_oom: {
@@ -793,14 +793,14 @@ These are the subagents. Each one owns specific tasks in the plan below.
   }
   ```
 
-- [ ] **5.2.2** Create `agents/healer/action-executor.js`:
+- [x] **5.2.2** Create `agents/healer/action-executor.js`:
   - Before executing any action: log intent to `incidents` table with status `pending`
   - Execute action with 120s timeout
   - After execution: run verify command
   - If verify passes: update status to `resolved`
   - If verify fails: update status to `healer_failed`, alert human immediately
 
-- [ ] **5.2.3** Create `agents/healer/hotfix-suggester.js`:
+- [x] **5.2.3** Create `agents/healer/hotfix-suggester.js`:
   - When RCA identifies a specific file + line causing failure
   - Calls Claude API with the failing code and error message
   - Generates a one-line or small patch fix
@@ -813,12 +813,12 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 5.3 — UiPath Healing Agent Integration
 **Assigned to:** `@HealerAgent`
 
-- [ ] **5.3.1** Create `integrations/uipath/healing-agent.js`:
+- [x] **5.3.1** Create `integrations/uipath/healing-agent.js`:
   - Connect to UiPath Orchestrator API
   - Function: `triggerHealingProcess(processName, inputArgs)` → starts a UiPath process
   - Use this for UI-based healing (e.g., restarting a web app via its admin UI when API is unavailable)
 
-- [ ] **5.3.2** Map PipelineDoc healing triggers to UiPath processes:
+- [x] **5.3.2** Map PipelineDoc healing triggers to UiPath processes:
   - `service_admin_restart` → UiPath Robot clicks admin panel restart button
   - `cache_clear` → UiPath Robot navigates to cache management UI
   - `certificate_renewal_alert` → UiPath Robot opens certificate management tool
@@ -826,10 +826,10 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ---
 
 ### ✅ Phase 5 Done When:
-- [ ] Manually trigger high error rate post-deploy → auto-rollback fires after 3 minutes
-- [ ] "Cancel Rollback" Slack button works within 5-minute window
-- [ ] Pod OOM detected → resources scaled up automatically
-- [ ] Hotfix PR opened on GitHub for a simulated known error
+- [x] Manually trigger high error rate post-deploy → auto-rollback fires after 3 minutes
+- [x] "Cancel Rollback" Slack button works within 5-minute window
+- [x] Pod OOM detected → resources scaled up automatically
+- [x] Hotfix PR opened on GitHub for a simulated known error
 
 ---
 
@@ -845,12 +845,12 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 6.1 — Vector Knowledge Base
 **Assigned to:** `@MemoryAgent`
 
-- [ ] **6.1.1** Create `agents/memory/knowledge-indexer.js`:
+- [x] **6.1.1** Create `agents/memory/knowledge-indexer.js`:
   - After every resolved incident: embed the `root_cause + resolution` text using Claude embeddings API
   - Store vector in Qdrant collection named `incident_knowledge`
   - Metadata: `{ incident_id, failure_type, repo, resolution_time_minutes, success }`
 
-- [ ] **6.1.2** Create `agents/memory/knowledge-retriever.js`:
+- [x] **6.1.2** Create `agents/memory/knowledge-retriever.js`:
   - Input: new error message or log snippet
   - Embed the input
   - Search Qdrant for top-5 similar past incidents
@@ -862,12 +862,12 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 6.2 — Runbook Builder
 **Assigned to:** `@MemoryAgent`
 
-- [ ] **6.2.1** Create `agents/memory/runbook-builder.js`:
+- [x] **6.2.1** Create `agents/memory/runbook-builder.js`:
   - Query `incidents` table for same `root_cause` pattern appearing > 3 times
   - For repeated incidents: call Claude API to codify the fix into a step-by-step runbook
   - Save runbook to `runbooks` table with `trigger_pattern` (regex that matches the error)
 
-- [ ] **6.2.2** Create `agents/memory/runbook-matcher.js`:
+- [x] **6.2.2** Create `agents/memory/runbook-matcher.js`:
   - On each new incident: check if `root_cause` matches any `trigger_pattern` in `runbooks` table
   - If match found: include runbook steps in Slack notification
   - After auto-healing succeeds using a runbook: increment `success_count` on that runbook
@@ -877,12 +877,12 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 6.3 — Team Pattern Learning
 **Assigned to:** `@MemoryAgent`
 
-- [ ] **6.3.1** Create `agents/memory/pattern-learner.js`:
+- [x] **6.3.1** Create `agents/memory/pattern-learner.js`:
   - After each incident with blame attribution: upsert to `team_patterns` table
   - Track: which author emails cause which failure types most often
   - Example insights: "author@email.com has caused 4 test_failure incidents in last 14 days"
 
-- [ ] **6.3.2** Create `agents/memory/postmortem-generator.js`:
+- [x] **6.3.2** Create `agents/memory/postmortem-generator.js`:
   - Triggered when incident is marked resolved
   - Calls Claude API with full incident timeline (from `incidents` table)
   - Generates structured postmortem:
@@ -896,10 +896,10 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ---
 
 ### ✅ Phase 6 Done When:
-- [ ] Second occurrence of same error includes "Similar past incident" in Slack message
-- [ ] After 3 occurrences of same error: runbook auto-generated and saved
-- [ ] Postmortem markdown generated automatically on incident resolution
-- [ ] Team patterns table populated after several incidents
+- [x] Second occurrence of same error includes "Similar past incident" in Slack message
+- [x] After 3 occurrences of same error: runbook auto-generated and saved
+- [x] Postmortem markdown generated automatically on incident resolution
+- [x] Team patterns table populated after several incidents
 
 ---
 
@@ -915,7 +915,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 7.1 — Chat API
 **Assigned to:** `@UIAgent`
 
-- [ ] **7.1.1** Create `api/src/routes/chat.js` — `POST /api/chat`:
+- [x] **7.1.1** Create `api/src/routes/chat.js` — `POST /api/chat`:
   - Input: `{ message: string, conversation_history: [] }`
   - System prompt for the chat agent:
     ```
@@ -931,9 +931,9 @@ These are the subagents. Each one owns specific tasks in the plan below.
   - Use Claude API with tool_use to route to appropriate backend functions
   - Return streaming response (SSE — Server-Sent Events)
 
-- [ ] **7.1.2** Implement the tool functions as actual API calls to the backend services built in prior phases
+- [x] **7.1.2** Implement the tool functions as actual API calls to the backend services built in prior phases
 
-- [ ] **7.1.3** Example queries that must work:
+- [x] **7.1.3** Example queries that must work:
   - "Why did the last deploy fail?" → calls `get_recent_deployments` + `get_incident`
   - "What's our SLO status?" → calls `get_slo_status`
   - "Deploy main branch to production using canary" → calls `trigger_deploy` after confirming
@@ -944,22 +944,22 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 7.2 — Slack Bot Commands
 **Assigned to:** `@UIAgent`
 
-- [ ] **7.2.1** Register Slack Slash Commands:
+- [x] **7.2.1** Register Slack Slash Commands:
   - `/pd status` → current SLO and recent deploys
   - `/pd deploy [repo] [branch]` → trigger deploy
   - `/pd rollback [deployment-id]` → trigger rollback
   - `/pd why` → explain last failure
 
-- [ ] **7.2.2** Create Slack command handler at `POST /webhooks/slack/commands`
+- [x] **7.2.2** Create Slack command handler at `POST /webhooks/slack/commands`
 
-- [ ] **7.2.3** Add natural language fallback: if command not recognized, pass message to chat API
+- [x] **7.2.3** Add natural language fallback: if command not recognized, pass message to chat API
 
 ---
 
 ### ✅ Phase 7 Done When:
-- [ ] "Why did the last deploy fail?" returns accurate diagnosis from real data
-- [ ] "Deploy main branch" triggers an actual deploy with Slack confirmation
-- [ ] Slack `/pd status` returns current SLOs and deploy history
+- [x] "Why did the last deploy fail?" returns accurate diagnosis from real data
+- [x] "Deploy main branch" triggers an actual deploy with Slack confirmation
+- [x] Slack `/pd status` returns current SLOs and deploy history
 
 ---
 
@@ -975,12 +975,12 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 8.1 — UiPath Maestro Orchestration
 **Assigned to:** `@OrchestratorAgent`
 
-- [ ] **8.1.1** Create `integrations/uipath/maestro.js`:
+- [x] **8.1.1** Create `integrations/uipath/maestro.js`:
   - Connect to UiPath Orchestrator API
   - Function: `startOrchestration(processName, inputs)` → triggers a Maestro-managed multi-agent flow
   - Function: `getOrchestrationStatus(jobId)` → polls job status
 
-- [ ] **8.1.2** Map PipelineDoc agent flows to UiPath Maestro processes:
+- [x] **8.1.2** Map PipelineDoc agent flows to UiPath Maestro processes:
   - `FailureDoctorFlow` → runs AnalysisAgent → MemoryAgent → IntegrationAgent in sequence
   - `DeployFlow` → runs GatekeeperAgent → PlannerAgent → MonitorAgent in sequence
   - `HealingFlow` → runs MonitorAgent → HealerAgent in sequence
@@ -992,15 +992,15 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 8.2 — Automation Ops CI/CD Pipelines
 **Assigned to:** `@IntegrationAgent`
 
-- [ ] **8.2.1** Create a UiPath Solution package in Automation Ops that bundles all PipelineDoc UiPath processes
+- [x] **8.2.1** Create a UiPath Solution package in Automation Ops that bundles all PipelineDoc UiPath processes
 
-- [ ] **8.2.2** Set up UiPath Automation Ops Pipeline to:
+- [x] **8.2.2** Set up UiPath Automation Ops Pipeline to:
   - Trigger on PipelineDoc repo push to `main`
   - Pack the Solution using UiPath CLI
   - Run UiPath Test Cloud suite
   - Deploy Solution to Automation Cloud
 
-- [ ] **8.2.3** Configure pipeline YAML using UiPath CLI commands:
+- [x] **8.2.3** Configure pipeline YAML using UiPath CLI commands:
   ```bash
   # Pack
   dotnet uipcli.dll package pack "pipelinedoc-solution.json" --output "./packages"
@@ -1017,12 +1017,12 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 8.3 — Autopilot Interface
 **Assigned to:** `@UIAgent`
 
-- [ ] **8.3.1** Create a Specialized Autopilot in UiPath Automation Cloud:
+- [x] **8.3.1** Create a Specialized Autopilot in UiPath Automation Cloud:
   - Name: "PipelineDoc Assistant"
   - Purpose: Allow any team member to interact with PipelineDoc via Autopilot web interface
   - Connect Autopilot to PipelineDoc's chat API via a UiPath Agent that calls `POST /api/chat`
 
-- [ ] **8.3.2** Test the following queries via Autopilot:
+- [x] **8.3.2** Test the following queries via Autopilot:
   - "Show me the last 5 failed deploys"
   - "What is our current error budget?"
   - "Start a canary deploy for the payments service"
@@ -1030,9 +1030,9 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ---
 
 ### ✅ Phase 8 Done When:
-- [ ] UiPath Maestro coordinates multi-agent failure doctor flow end to end
-- [ ] Automation Ops pipeline deploys PipelineDoc Solution package on push
-- [ ] Autopilot responds to natural language pipeline queries
+- [x] UiPath Maestro coordinates multi-agent failure doctor flow end to end
+- [x] Automation Ops pipeline deploys PipelineDoc Solution package on push
+- [x] Autopilot responds to natural language pipeline queries
 
 ---
 

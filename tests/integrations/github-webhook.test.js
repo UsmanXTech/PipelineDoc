@@ -80,6 +80,136 @@ test('GitHub Webhook Handler - bypasses signature in test and processes event', 
   webhook.handleWorkflowRun = originalHandleWorkflowRun;
 });
 
+test('GitHub Webhook Handler - handlePullRequest triggers gate evaluation and creates check run', async () => {
+  const githubClient = require('../../integrations/github/client');
+  const originalGetCommit = githubClient.getCommit;
+  const originalCreateCheckRun = githubClient.createCheckRun;
+  const originalUpdateCheckRun = githubClient.updateCheckRun;
+  const originalGetPRDiff = githubClient.getPRDiff;
+  const originalGetPRFiles = githubClient.getPRFiles;
+  const originalCreatePRComment = githubClient.createPRComment;
+
+  let checkRunCreated = false;
+  let checkRunUpdated = false;
+  let checkRunData = null;
+
+  githubClient.getCommit = async () => ({
+    commit: { author: { email: 'test-author@example.com' } }
+  });
+
+  githubClient.createCheckRun = async (owner, repo, data) => {
+    checkRunCreated = true;
+    checkRunData = data;
+    return { id: 777 };
+  };
+
+  githubClient.updateCheckRun = async (owner, repo, checkRunId, data) => {
+    checkRunUpdated = true;
+    checkRunData = { ...checkRunData, ...data };
+    return {};
+  };
+
+  githubClient.getPRDiff = async () => `
+diff --git a/src/index.js b/src/index.js
++++ b/src/index.js
++console.log("clean change");
+`;
+
+  githubClient.getPRFiles = async () => [
+    { filename: 'src/index.js' }
+  ];
+
+  githubClient.createPRComment = async () => ({});
+
+  await webhook.runGateEvaluation('test-owner', 'test-repo', 123, 'abcdef123456', 'test-author@example.com');
+
+  assert.strictEqual(checkRunCreated, true);
+  assert.strictEqual(checkRunUpdated, true);
+  assert.strictEqual(checkRunData.status, 'completed');
+  assert.strictEqual(checkRunData.conclusion, 'success');
+  assert.match(checkRunData.output.title, /Gate Decision: PASS/);
+
+  // Restore mocks
+  githubClient.getCommit = originalGetCommit;
+  githubClient.createCheckRun = originalCreateCheckRun;
+  githubClient.updateCheckRun = originalUpdateCheckRun;
+  githubClient.getPRDiff = originalGetPRDiff;
+  githubClient.getPRFiles = originalGetPRFiles;
+  githubClient.createPRComment = originalCreatePRComment;
+});
+
+test('GitHub Webhook Handler - handlePullRequest blocks PR containing secrets and checks override', async () => {
+  const githubClient = require('../../integrations/github/client');
+  const originalGetCommit = githubClient.getCommit;
+  const originalCreateCheckRun = githubClient.createCheckRun;
+  const originalUpdateCheckRun = githubClient.updateCheckRun;
+  const originalGetPRDiff = githubClient.getPRDiff;
+  const originalGetPRFiles = githubClient.getPRFiles;
+  const originalCreatePRComment = githubClient.createPRComment;
+  const originalGetPRDetails = githubClient.getPRDetails;
+  const originalGetPRReviews = githubClient.getPRReviews;
+
+  let checkRunCreated = false;
+  let checkRunUpdated = false;
+  let checkRunData = null;
+  let prCommentPosted = false;
+
+  githubClient.getCommit = async () => ({
+    commit: { author: { email: 'test-author@example.com' } }
+  });
+
+  githubClient.createCheckRun = async (owner, repo, data) => {
+    checkRunCreated = true;
+    checkRunData = data;
+    return { id: 888 };
+  };
+
+  githubClient.updateCheckRun = async (owner, repo, checkRunId, data) => {
+    checkRunUpdated = true;
+    checkRunData = { ...checkRunData, ...data };
+    return {};
+  };
+
+  githubClient.getPRDiff = async () => `
+diff --git a/src/index.js b/src/index.js
++++ b/src/index.js
++const token = "ghp_mYqP4w7Z1nK2L9x8J7h6g5f4e3d2c1b0a9z8";
+`;
+
+  githubClient.getPRFiles = async () => [
+    { filename: 'src/index.js' }
+  ];
+
+  githubClient.createPRComment = async () => {
+    prCommentPosted = true;
+    return {};
+  };
+
+  githubClient.getPRDetails = async () => ({
+    labels: [{ name: 'bug' }]
+  });
+  githubClient.getPRReviews = async () => [];
+
+  await webhook.runGateEvaluation('test-owner', 'test-repo', 123, 'abcdef123456', 'test-author@example.com');
+
+  assert.strictEqual(checkRunCreated, true);
+  assert.strictEqual(checkRunUpdated, true);
+  assert.strictEqual(checkRunData.status, 'completed');
+  assert.strictEqual(checkRunData.conclusion, 'failure');
+  assert.match(checkRunData.output.title, /Gate Decision: BLOCK/);
+  assert.strictEqual(prCommentPosted, true);
+
+  // Restore mocks
+  githubClient.getCommit = originalGetCommit;
+  githubClient.createCheckRun = originalCreateCheckRun;
+  githubClient.updateCheckRun = originalUpdateCheckRun;
+  githubClient.getPRDiff = originalGetPRDiff;
+  githubClient.getPRFiles = originalGetPRFiles;
+  githubClient.createPRComment = originalCreatePRComment;
+  githubClient.getPRDetails = originalGetPRDetails;
+  githubClient.getPRReviews = originalGetPRReviews;
+});
+
 test.after(() => {
   const { pgPool, redisClient } = require('../../config/database');
   if (pgPool && typeof pgPool.end === 'function') {

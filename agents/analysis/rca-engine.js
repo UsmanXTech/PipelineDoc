@@ -23,9 +23,26 @@ async function retryWithBackoff(fn, retries = 3, delay = 1000) {
  * Analyzes the CI failure logs and code changes using Claude API.
  */
 async function analyzeFailure({ logs, diff, commitMessage, previousRuns = [], deploymentId = null }) {
+  const startTime = Date.now();
   // 1. Ingest logs and diffs
   const parsedLogs = ingestLogs(logs);
   const parsedDiff = parseDiff(diff);
+
+  // Retrieve similar incidents for RAG context
+  let similarIncidentsContext = '';
+  try {
+    const { retrieveSimilarIncidents } = require('../memory/knowledge-retriever');
+    const searchLog = parsedLogs.errorContext || logs || '';
+    const result = await retrieveSimilarIncidents(searchLog);
+    if (result && result.similar_incidents && result.similar_incidents.length > 0) {
+      similarIncidentsContext = '\n--- SIMILAR PAST INCIDENTS ---\n' +
+        result.similar_incidents.map((inc, i) => 
+          `${i + 1}. Root Cause: ${inc.root_cause}\n   Resolution: ${inc.resolution}\n   Similarity Score: ${inc.similarity_score.toFixed(4)}`
+        ).join('\n\n') + '\n';
+    }
+  } catch (err) {
+    console.warn('Failed to retrieve similar incidents:', err.message);
+  }
 
   const systemPrompt = `You are PipelineDoc Failure Doctor, an expert CI/CD diagnostic agent.
 Given CI failure logs and a code diff, you must:
@@ -41,7 +58,7 @@ Commit Message: ${commitMessage || 'No commit message provided'}
 
 --- LOGS (EXTRACTED CONTEXT) ---
 ${parsedLogs.errorContext || 'No error logs captured.'}
-
+${similarIncidentsContext}
 --- GIT DIFF ---
 ${diff || 'No code changes (diff is empty).'}
 `;
@@ -91,6 +108,14 @@ ${diff || 'No code changes (diff is empty).'}
     } catch (dbError) {
       console.error('Failed to log incident to database:', dbError.message);
     }
+  }
+
+  const duration = Date.now() - startTime;
+  try {
+    const metricsStore = require('../../api/src/services/metrics-store');
+    metricsStore.incrementRca(duration);
+  } catch (err) {
+    // Ignore metrics failure
   }
 
   return {

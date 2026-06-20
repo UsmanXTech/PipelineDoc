@@ -1,7 +1,12 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { calculateRiskScore } = require('../../agents/gatekeeper/risk-scorer');
 const databaseConfig = require('../../config/database');
+
+// Keep references to original config properties
+const originalPgPool = databaseConfig.pgPool;
+const originalRedisClient = databaseConfig.redisClient;
+
+const { calculateRiskScore } = require('../../agents/gatekeeper/risk-scorer');
 
 test('Risk Scorer - Low risk changes', async () => {
   const files = [
@@ -45,7 +50,18 @@ test('Risk Scorer - Author with high recent failure rate increases score', async
   const result = await calculateRiskScore({ files, authorEmail: 'bad-pusher@example.com' });
 
   assert.ok(result.breakdown.some(b => b.rule.includes('Author has high recent failure rate')));
-  
-  // Clean up
-  databaseConfig.pgPool = null;
 });
+
+test.after(() => {
+  // Restore original references
+  databaseConfig.pgPool = originalPgPool;
+  databaseConfig.redisClient = originalRedisClient;
+
+  if (originalPgPool && typeof originalPgPool.end === 'function') {
+    originalPgPool.end().catch(() => {});
+  }
+  if (originalRedisClient) {
+    originalRedisClient.disconnect();
+  }
+});
+

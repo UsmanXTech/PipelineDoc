@@ -8,7 +8,7 @@ const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN || 'dummy-slack-token';
 /**
  * Sends a diagnostic alert block-kit message to a Slack channel.
  */
-async function sendDiagnosisAlert({ channel, repo, branch, commitSha, diagnosis, blame, flakiness, runId }) {
+async function sendDiagnosisAlert({ channel, repo, branch, commitSha, diagnosis, blame, flakiness, runId, matchedRunbook }) {
   if (!SLACK_BOT_TOKEN || SLACK_BOT_TOKEN === 'dummy-slack-token') {
     console.warn('Slack bot token not configured. Skipping Slack alert.');
     return null;
@@ -74,23 +74,43 @@ async function sendDiagnosisAlert({ channel, repo, branch, commitSha, diagnosis,
         type: 'mrkdwn',
         text: `*💡 Suggested Fixes:*\n${(diagnosis.fixes || []).map((f, i) => `${i + 1}. ${f}`).join('\n') || 'None suggested.'}`
       }
-    },
-    {
-      type: 'actions',
-      elements: [
-        {
-          type: 'button',
-          text: {
-            type: 'plain_text',
-            text: 'View Workflow Run',
-            emoji: true
-          },
-          url: runUrl,
-          style: 'danger'
-        }
-      ]
     }
   ];
+
+  if (matchedRunbook) {
+    blocks.push(
+      {
+        type: 'divider'
+      },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `*📖 Matched Runbook: ${matchedRunbook.title}*\n${
+            Array.isArray(matchedRunbook.steps)
+              ? matchedRunbook.steps.map((s, i) => `*${i + 1}.* ${s}`).join('\n')
+              : matchedRunbook.steps
+          }`
+        }
+      }
+    );
+  }
+
+  blocks.push({
+    type: 'actions',
+    elements: [
+      {
+        type: 'button',
+        text: {
+          type: 'plain_text',
+          text: 'View Workflow Run',
+          emoji: true
+        },
+        url: runUrl,
+        style: 'danger'
+      }
+    ]
+  });
 
   try {
     const response = await axios.post(
@@ -119,6 +139,41 @@ async function sendDiagnosisAlert({ channel, repo, branch, commitSha, diagnosis,
   }
 }
 
+async function sendSlackMessage({ channel, text, blocks }) {
+  if (!SLACK_BOT_TOKEN || SLACK_BOT_TOKEN === 'dummy-slack-token') {
+    console.warn('Slack bot token not configured. Skipping Slack message.');
+    return null;
+  }
+
+  try {
+    const response = await axios.post(
+      SLACK_API_URL,
+      {
+        channel: channel || process.env.SLACK_CHANNEL_ID || 'general',
+        text,
+        blocks
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${SLACK_BOT_TOKEN}`,
+          'Content-Type': 'application/json; charset=utf-8'
+        }
+      }
+    );
+
+    if (!response.data.ok) {
+      throw new Error(`Slack API error: ${response.data.error}`);
+    }
+
+    return response.data;
+  } catch (error) {
+    console.error('Failed to post to Slack:', error.message);
+    throw error;
+  }
+}
+
 module.exports = {
-  sendDiagnosisAlert
+  sendDiagnosisAlert,
+  sendSlackMessage
 };
+

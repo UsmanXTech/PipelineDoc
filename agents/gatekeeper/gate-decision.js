@@ -2,18 +2,54 @@ const { calculateRiskScore } = require('./risk-scorer');
 const { detectBreakingChanges } = require('./breaking-change-detector');
 const { scanDependencies } = require('./dependency-scanner');
 const { scanSecrets } = require('./secret-detector');
+const { triggerTestSuite, pollTestResults } = require('../../integrations/uipath/test-cloud');
 
 /**
  * Evaluates the PR gate decision based on risk, breaking changes, vulnerabilities, and secrets.
  */
-async function evaluateGate({ rawDiff, files = [], authorEmail = '' }) {
-  // 1. Run scanners
+async function evaluateGate({ rawDiff, files = [], authorEmail = '', uipathSuiteId = null }) {
+  // 1. Run static scanners
   const risk = await calculateRiskScore({ files, authorEmail });
   const breaking = detectBreakingChanges(rawDiff);
   const depScan = await scanDependencies(rawDiff);
   const secrets = scanSecrets(rawDiff);
 
-  // 2. Decision Logic
+  // 2. Run UiPath Test Cloud if suite ID is provided
+  let uipathReport = null;
+  const suiteId = uipathSuiteId || process.env.UIPATH_SUITE_ID;
+  if (suiteId) {
+    try {
+      const triggerResult = await triggerTestSuite(suiteId);
+      if (triggerResult && triggerResult.executionId) {
+        uipathReport = await pollTestResults(triggerResult.executionId);
+        if (uipathReport) {
+          if (uipathReport.status === 'Failed') {
+            risk.score += 40;
+            risk.breakdown.push({ rule: 'UiPath Test Suite failed', points: 40 });
+          }
+          if (uipathReport.flaky > 0) {
+            risk.score += 15;
+            risk.breakdown.push({ rule: 'Flaky tests detected by UiPath Test Cloud', points: 15 });
+          }
+          // Clamp score and recalculate risk level
+          risk.score = Math.min(100, Math.max(0, risk.score));
+          if (risk.score >= 81) {
+            risk.level = 'critical';
+          } else if (risk.score >= 61) {
+            risk.level = 'high';
+          } else if (risk.score >= 31) {
+            risk.level = 'medium';
+          } else {
+            risk.level = 'low';
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to run UiPath Test Cloud during gate evaluation:', err.message);
+    }
+  }
+
+  // 3. Decision Logic
   let decision = 'PASS';
   const reasons = [];
 
@@ -62,6 +98,13 @@ async function evaluateGate({ rawDiff, files = [], authorEmail = '' }) {
 
   const reasonSummary = reasons.length > 0 ? reasons.join('; ') : 'All gates passed successfully.';
 
+  try {
+    const metricsStore = require('../../api/src/services/metrics-store');
+    metricsStore.incrementGate(decision);
+  } catch (err) {
+    // Ignore metrics failure
+  }
+
   return {
     decision,
     reason: reasonSummary,
@@ -70,7 +113,8 @@ async function evaluateGate({ rawDiff, files = [], authorEmail = '' }) {
       risk,
       breaking,
       dependencies: depScan,
-      secrets
+      secrets,
+      uipath: uipathReport
     }
   };
 }
@@ -78,3 +122,4 @@ async function evaluateGate({ rawDiff, files = [], authorEmail = '' }) {
 module.exports = {
   evaluateGate
 };
+

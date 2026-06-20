@@ -63,6 +63,11 @@ async function getAccessToken() {
  * Triggers a test suite run in UiPath Test Cloud.
  */
 async function triggerTestSuite(suiteId, environment = 'Production') {
+  // Return mock fallback in development/test
+  if (process.env.NODE_ENV !== 'production') {
+    return { executionId: `mock-exec-${suiteId}-${Date.now()}`, status: 'pending', mocked: true };
+  }
+
   const token = await getAccessToken();
   const orgId = config.organizationId || 'dummy-org-id';
   const tenant = config.tenantName || 'dummy-tenant';
@@ -92,10 +97,6 @@ async function triggerTestSuite(suiteId, environment = 'Production') {
     };
   } catch (error) {
     console.error(`Failed to trigger UiPath Test Suite ${suiteId}:`, error.message);
-    // Return mock fallback in development
-    if (process.env.NODE_ENV !== 'production') {
-      return { executionId: `mock-exec-${Date.now()}`, status: 'pending', mocked: true };
-    }
     throw error;
   }
 }

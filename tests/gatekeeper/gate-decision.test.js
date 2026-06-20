@@ -80,6 +80,42 @@ test('Gate Decision - WARN status on breaking changes and warnings', async () =>
   assert.match(report.reason, /breaking change/);
 });
 
+test('Gate Decision - applies penalty (+40) if UiPath suite fails', async () => {
+  const diff = `diff --git a/src/Button.js b/src/Button.js
++++ b/src/Button.js
++console.log("hello");
+`;
+  const files = [{ path: 'src/Button.js' }, { path: 'tests/Button.test.js' }];
+
+  const report = await evaluateGate({
+    rawDiff: diff,
+    files,
+    authorEmail: 'john@example.com',
+    uipathSuiteId: 'fail' // triggers simulated failed run
+  });
+
+  assert.strictEqual(report.risk_score, 40);
+  assert.strictEqual(report.details.uipath.status, 'Failed');
+});
+
+test('Gate Decision - applies penalty (+15) if UiPath suite is flaky', async () => {
+  const diff = `diff --git a/src/Button.js b/src/Button.js
++++ b/src/Button.js
++console.log("hello");
+`;
+  const files = [{ path: 'src/Button.js' }, { path: 'tests/Button.test.js' }];
+
+  const report = await evaluateGate({
+    rawDiff: diff,
+    files,
+    authorEmail: 'john@example.com',
+    uipathSuiteId: 'flaky' // triggers simulated flaky run
+  });
+
+  assert.strictEqual(report.risk_score, 15);
+  assert.strictEqual(report.details.uipath.flaky, 1);
+});
+
 test.after(() => {
   const { pgPool, redisClient } = require('../../config/database');
   if (pgPool && typeof pgPool.end === 'function') {
@@ -89,3 +125,4 @@ test.after(() => {
     redisClient.disconnect();
   }
 });
+

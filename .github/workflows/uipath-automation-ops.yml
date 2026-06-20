@@ -1,0 +1,61 @@
+name: UiPath Automation Ops CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  ci-cd:
+    runs-on: ubuntu-latest
+    
+    env:
+      NODE_ENV: test
+      UIPATH_CLIENT_ID: ${{ secrets.UIPATH_CLIENT_ID }}
+      UIPATH_CLIENT_SECRET: ${{ secrets.UIPATH_CLIENT_SECRET }}
+      UIPATH_TENANT_NAME: ${{ secrets.UIPATH_TENANT_NAME }}
+      UIPATH_ORGANIZATION_ID: ${{ secrets.UIPATH_ORGANIZATION_ID }}
+      UIPATH_SUITE_ID: ${{ secrets.UIPATH_SUITE_ID }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install Node.js Dependencies
+        run: npm install
+
+      - name: Run UiPath Test Cloud Suite
+        run: node scripts/run-uipath-tests.js
+
+      - name: Set up .NET (for UiPath CLI)
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '6.0.x'
+
+      - name: Download UiPath CLI
+        run: |
+          mkdir -p uipath-cli
+          curl -L -o uipath-cli.zip https://uipath.gallery.vsassets.io/_apis/public/gallery/publisher/UiPath/extension/UiPathIntegrationService/2.0.0/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage
+          unzip -p uipath-cli.zip "extension/uipcli/uipcli.dll" > ./uipath-cli/uipcli.dll
+          echo "UiPath CLI uipcli.dll successfully extracted."
+
+      - name: Pack UiPath Solution
+        run: |
+          mkdir -p packages
+          dotnet ./uipath-cli/uipcli.dll package pack "pipelinedoc-solution.json" --output "./packages"
+
+      - name: Analyze UiPath Solution
+        run: |
+          dotnet ./uipath-cli/uipcli.dll package analyze "./packages/*.nupkg"
+
+      - name: Deploy UiPath Solution to Automation Cloud
+        run: |
+          dotnet ./uipath-cli/uipcli.dll orchestrator package deploy "./packages/*.nupkg" \
+            --organizationUnit "PipelineDoc" \
+            --environments "Production"

@@ -43,6 +43,16 @@ async function runFailureFlow({ owner, repo, runId, commitSha, branch, commitMes
       affectedFile: diagnosis.affected_file
     });
 
+    // Learn pattern if blame attribution is successful
+    if (blame && blame.author_email && diagnosis.failure_type) {
+      try {
+        const { learnPattern } = require('../memory/pattern-learner');
+        await learnPattern(blame.author_email, diagnosis.failure_type);
+      } catch (patternErr) {
+        console.error('Failed to trigger pattern learner:', patternErr.message);
+      }
+    }
+
     // 5. Detect if failure is flaky by cross-referencing DB
     console.log('Running flaky test detector...');
     const flakiness = await flakyDetector.detectFlakiness({
@@ -54,6 +64,9 @@ async function runFailureFlow({ owner, repo, runId, commitSha, branch, commitMes
     console.log('Posting alert to Slack...');
     let slackResult = null;
     try {
+      const runbookMatcher = require('../memory/runbook-matcher');
+      const matchedRunbook = await runbookMatcher.matchRunbook(diagnosis.root_cause, logs);
+      
       slackResult = await slackClient.sendDiagnosisAlert({
         channel: slackChannel,
         repo: `${owner}/${repo}`,
@@ -62,7 +75,8 @@ async function runFailureFlow({ owner, repo, runId, commitSha, branch, commitMes
         diagnosis,
         blame,
         flakiness,
-        runId
+        runId,
+        matchedRunbook
       });
     } catch (slackErr) {
       console.error('Slack alert skipped or failed:', slackErr.message);

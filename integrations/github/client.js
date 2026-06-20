@@ -155,6 +155,21 @@ async function createCheckRun(owner, repo, { name, headSha, status, conclusion, 
   }
 }
 
+async function updateCheckRun(owner, repo, checkRunId, { status, conclusion, output }) {
+  const client = getClient();
+  try {
+    const response = await client.patch(`/repos/${owner}/${repo}/check-runs/${checkRunId}`, {
+      status,
+      conclusion,
+      output
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error updating GitHub Check Run ${checkRunId}:`, error.message);
+    throw error;
+  }
+}
+
 async function getPRReviews(owner, repo, prNumber) {
   const client = getClient();
   try {
@@ -162,6 +177,39 @@ async function getPRReviews(owner, repo, prNumber) {
     return response.data;
   } catch (error) {
     console.error(`Error fetching PR reviews for PR #${prNumber}:`, error.message);
+    throw error;
+  }
+}
+
+/**
+ * Fetches the raw diff of a pull request.
+ */
+async function getPRDiff(owner, repo, prNumber) {
+  const client = getClient();
+  try {
+    const response = await client.get(`/repos/${owner}/${repo}/pulls/${prNumber}`, {
+      headers: {
+        Accept: 'application/vnd.github.diff',
+      },
+      responseType: 'text',
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching PR diff for PR #${prNumber}:`, error.message);
+    throw error;
+  }
+}
+
+/**
+ * Fetches the list of files in a pull request.
+ */
+async function getPRFiles(owner, repo, prNumber) {
+  const client = getClient();
+  try {
+    const response = await client.get(`/repos/${owner}/${repo}/pulls/${prNumber}/files`);
+    return response.data; // Array of file objects
+  } catch (error) {
+    console.error(`Error fetching PR files for PR #${prNumber}:`, error.message);
     throw error;
   }
 }
@@ -174,5 +222,9 @@ module.exports = {
   getCommit,
   getFileCommits,
   createCheckRun,
+  updateCheckRun,
   getPRReviews,
+  getPRDiff,
+  getPRFiles,
 };
+

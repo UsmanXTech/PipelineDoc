@@ -1,6 +1,9 @@
 const crypto = require('crypto');
 const config = require('../../config/github');
 const { runFailureFlow } = require('../../agents/orchestrator/failure-flow');
+const githubClient = require('./client');
+const { evaluateGate } = require('../../agents/gatekeeper/gate-decision');
+const { checkGateOverride } = require('../../agents/gatekeeper/override-check');
 
 /**
  * Verifies the signature of the incoming GitHub webhook payload.
@@ -56,6 +59,9 @@ async function handleWebhook(req, res) {
       case 'pull_request':
         await module.exports.handlePullRequest(payload);
         break;
+      case 'pull_request_review':
+        await module.exports.handlePullRequestReview(payload);
+        break;
       default:
         console.log(`Unhandled GitHub event: ${event}`);
     }
@@ -106,7 +112,179 @@ async function handlePush(payload) {
 }
 
 async function handlePullRequest(payload) {
-  console.log(`Pull Request #${payload.number} event action: ${payload.action}`);
+  const action = payload.action;
+  const prNumber = payload.pull_request ? payload.pull_request.number : payload.number;
+  console.log(`Pull Request #${prNumber} event action: ${action}`);
+
+  const activeActions = ['opened', 'synchronize', 'reopened', 'labeled', 'unlabeled'];
+  if (activeActions.includes(action)) {
+    const owner = payload.repository.owner.login;
+    const repo = payload.repository.name;
+    const headSha = payload.pull_request.head.sha;
+    
+    let authorEmail = '';
+    try {
+      const commitDetails = await githubClient.getCommit(owner, repo, headSha);
+      if (commitDetails && commitDetails.commit && commitDetails.commit.author) {
+        authorEmail = commitDetails.commit.author.email || '';
+      }
+    } catch (e) {
+      console.warn(`Could not fetch commit details to resolve author email: ${e.message}`);
+    }
+
+    // Run async in background
+    runGateEvaluation(owner, repo, prNumber, headSha, authorEmail).catch(err => {
+      console.error(`Error in runGateEvaluation for PR #${prNumber}:`, err);
+    });
+  }
+}
+
+async function handlePullRequestReview(payload) {
+  const action = payload.action;
+  const prNumber = payload.pull_request.number;
+  console.log(`Pull Request Review for #${prNumber} action: ${action}`);
+
+  if (action === 'submitted' || action === 'edited' || action === 'dismissed') {
+    const owner = payload.repository.owner.login;
+    const repo = payload.repository.name;
+    const headSha = payload.pull_request.head.sha;
+    
+    let authorEmail = '';
+    try {
+      const commitDetails = await githubClient.getCommit(owner, repo, headSha);
+      if (commitDetails && commitDetails.commit && commitDetails.commit.author) {
+        authorEmail = commitDetails.commit.author.email || '';
+      }
+    } catch (e) {
+      console.warn(`Could not fetch commit details to resolve author email: ${e.message}`);
+    }
+
+    runGateEvaluation(owner, repo, prNumber, headSha, authorEmail).catch(err => {
+      console.error(`Error in runGateEvaluation from review for PR #${prNumber}:`, err);
+    });
+  }
+}
+
+async function runGateEvaluation(owner, repo, prNumber, headSha, authorEmail) {
+  // 1. Create check run with status in_progress
+  let checkRun = null;
+  try {
+    checkRun = await githubClient.createCheckRun(owner, repo, {
+      name: 'PipelineDoc / Gate',
+      headSha,
+      status: 'in_progress',
+      output: {
+        title: 'Gate Evaluation In Progress',
+        summary: 'Evaluating pull request risk scoring, breaking changes, dependency vulnerabilities, secrets, and running UiPath Test Cloud suite.'
+      }
+    });
+  } catch (err) {
+    console.error('Failed to create initial check run:', err.message);
+  }
+
+  try {
+    // 2. Fetch PR details (diff and files)
+    const [diff, prFiles] = await Promise.all([
+      githubClient.getPRDiff(owner, repo, prNumber),
+      githubClient.getPRFiles(owner, repo, prNumber)
+    ]);
+
+    const files = prFiles.map(f => ({ path: f.filename }));
+
+    // 3. Evaluate gate
+    const evaluation = await evaluateGate({
+      rawDiff: diff,
+      files,
+      authorEmail
+    });
+
+    let decision = evaluation.decision;
+    let reason = evaluation.reason;
+    let overrideUsed = false;
+
+    // 4. Override Check:
+    // If the decision is BLOCK, check if override requirements are met
+    if (decision === 'BLOCK') {
+      const overrideResult = await checkGateOverride({ owner, repo, prNumber });
+      if (overrideResult.allowed) {
+        decision = 'PASS';
+        reason = `${evaluation.reason} (OVERRIDDEN: ${overrideResult.reason})`;
+        overrideUsed = true;
+      }
+    }
+
+    // 5. Determine Check Run Status & Conclusion
+    let conclusion = 'success';
+    if (decision === 'BLOCK') {
+      conclusion = 'failure';
+    } else if (decision === 'WARN') {
+      conclusion = 'neutral';
+    }
+
+    // 6. Build summary output
+    const title = `Gate Decision: ${decision}`;
+    const summary = `### Summary of Gate Evaluation
+* **Final Score**: ${evaluation.risk_score}/100
+* **Decision**: **${decision}**
+* **Reason**: ${reason}
+${overrideUsed ? '\n> [!NOTE]\n> Manual override approved by 2 reviewers with the `gate-override` label.' : ''}
+
+### Gate Verification Details
+* **Secrets Scanned**: ${evaluation.details.secrets.secrets_found ? '❌ SECRETS DETECTED' : '✅ Clean'}
+* **Breaking Changes**: ${evaluation.details.breaking.has_breaking_changes ? `❌ ${evaluation.details.breaking.changes.length} breaking changes found` : '✅ None'}
+* **CVE Vulnerabilities**: ${evaluation.details.dependencies.vulnerabilities.length > 0 ? `❌ ${evaluation.details.dependencies.vulnerabilities.length} vulnerabilities found` : '✅ Clean'}
+* **UiPath Test Run**: ${evaluation.details.uipath ? `${evaluation.details.uipath.status} (Total: ${evaluation.details.uipath.totalTests}, Passed: ${evaluation.details.uipath.passed}, Failed: ${evaluation.details.uipath.failed}, Flaky: ${evaluation.details.uipath.flaky})` : 'Skipped or Not Configured'}`;
+
+    // 7. Update Check Run
+    if (checkRun) {
+      await githubClient.updateCheckRun(owner, repo, checkRun.id, {
+        status: 'completed',
+        conclusion,
+        output: {
+          title,
+          summary
+        }
+      });
+    } else {
+      await githubClient.createCheckRun(owner, repo, {
+        name: 'PipelineDoc / Gate',
+        headSha,
+        status: 'completed',
+        conclusion,
+        output: {
+          title,
+          summary
+        }
+      });
+    }
+
+    // Optionally post comment on PR if blocked or warned
+    if (decision === 'BLOCK' || decision === 'WARN') {
+      try {
+        await githubClient.createPRComment(
+          owner,
+          repo,
+          prNumber,
+          `### ⚠️ PipelineDoc Gate Alert\n\n**Decision**: \`${decision}\`\n**Reason**: ${reason}\n\n*Please fix the flagged items above or request a reviewer to add the \`gate-override\` label and approve.*`
+        );
+      } catch (commentErr) {
+        console.warn('Failed to post comment on PR:', commentErr.message);
+      }
+    }
+
+  } catch (error) {
+    console.error('Error running gate evaluation flow:', error);
+    if (checkRun) {
+      await githubClient.updateCheckRun(owner, repo, checkRun.id, {
+        status: 'completed',
+        conclusion: 'failure',
+        output: {
+          title: 'Gate Evaluation Error',
+          summary: `An internal error occurred during risk gate evaluation: ${error.message}`
+        }
+      }).catch(err => console.error('Failed to mark check run as error:', err.message));
+    }
+  }
 }
 
 module.exports = {
@@ -115,5 +293,7 @@ module.exports = {
   handleWorkflowRun,
   handleCheckRun,
   handlePush,
-  handlePullRequest
+  handlePullRequest,
+  handlePullRequestReview,
+  runGateEvaluation
 };

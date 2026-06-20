@@ -1,0 +1,4 @@
+[
+  { "name": "API Uptime", "target": 99.9, "window_days": 30 },
+  { "name": "P99 Latency < 500ms", "target": 99.5, "window_days": 7 }
+]
