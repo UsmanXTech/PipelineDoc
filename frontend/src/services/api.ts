@@ -7,6 +7,157 @@ const api = axios.create({
   },
 });
 
+// Interceptor to attach JWT token and automatically renew if it is at or past 50% of its lifetime
+let isRefreshing = false;
+
+api.interceptors.request.use(async (config) => {
+  const token = localStorage.getItem('pipelinedoc_token');
+  if (token && config.headers) {
+    try {
+      // Decode JWT token locally from its base64 payload
+      const payloadBase64 = token.split('.')[1];
+      if (payloadBase64) {
+        const decoded = JSON.parse(window.atob(payloadBase64));
+        const iat = decoded.iat;
+        const exp = decoded.exp;
+        
+        if (iat && exp) {
+          const totalTtl = exp - iat;
+          const currentTime = Math.floor(Date.now() / 1000);
+          const remaining = exp - currentTime;
+          
+          if (remaining <= 0) {
+            // Token is already expired, clear storage
+            localStorage.removeItem('pipelinedoc_token');
+            localStorage.removeItem('pipelinedoc_user');
+          } else if (remaining <= 0.5 * totalTtl && !isRefreshing && config.url !== '/api/auth/renew' && config.url !== '/api/auth/github/callback') {
+            isRefreshing = true;
+            try {
+              // Call renewal endpoint directly with vanilla Axios to prevent recursion
+              const response = await axios.post(`${import.meta.env.VITE_API_URL || ''}/api/auth/renew`, {}, {
+                headers: {
+                  Authorization: `Bearer ${token}`
+                }
+              });
+              
+              if (response.data && response.data.token) {
+                localStorage.setItem('pipelinedoc_token', response.data.token);
+                localStorage.setItem('pipelinedoc_user', JSON.stringify(response.data.user));
+                config.headers.Authorization = `Bearer ${response.data.token}`;
+              }
+            } catch (err) {
+              console.warn('Token renewal failed, continuing with current token:', err);
+              config.headers.Authorization = `Bearer ${token}`;
+            } finally {
+              isRefreshing = false;
+            }
+          } else {
+            config.headers.Authorization = `Bearer ${token}`;
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Error decoding JWT token in request interceptor:', e);
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+}
+
+export interface AuthResponse {
+  success: boolean;
+  token: string;
+  user: User;
+}
+
+export interface GitHubUrlResponse {
+  success: boolean;
+  isMock: boolean;
+  url: string;
+}
+
+export interface Conversation {
+  id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  thought_signature: string | null;
+  created_at: string;
+}
+
+// Authentication API calls
+export const getGitHubAuthUrl = async (): Promise<GitHubUrlResponse> => {
+  const response = await api.get('/api/auth/github/url');
+  return response.data;
+};
+
+export const loginWithGitHubCode = async (code: string): Promise<AuthResponse> => {
+  const response = await api.post('/api/auth/github/callback', { code });
+  if (response.data.token) {
+    localStorage.setItem('pipelinedoc_token', response.data.token);
+    localStorage.setItem('pipelinedoc_user', JSON.stringify(response.data.user));
+  }
+  return response.data;
+};
+
+export const renewToken = async (): Promise<AuthResponse> => {
+  const response = await api.post('/api/auth/renew');
+  if (response.data.token) {
+    localStorage.setItem('pipelinedoc_token', response.data.token);
+    localStorage.setItem('pipelinedoc_user', JSON.stringify(response.data.user));
+  }
+  return response.data;
+};
+
+export const logout = () => {
+  localStorage.removeItem('pipelinedoc_token');
+  localStorage.removeItem('pipelinedoc_user');
+};
+
+export const getAuthenticatedUser = (): User | null => {
+  const userStr = localStorage.getItem('pipelinedoc_user');
+  if (!userStr) return null;
+  try {
+    return JSON.parse(userStr);
+  } catch (e) {
+    return null;
+  }
+};
+
+export const isAuthenticated = (): boolean => {
+  return !!localStorage.getItem('pipelinedoc_token');
+};
+
+// Chat Persistence API calls
+export const getConversations = async (): Promise<Conversation[]> => {
+  const response = await api.get('/api/chat/conversations');
+  return response.data;
+};
+
+export const getConversationMessages = async (conversationId: string): Promise<Message[]> => {
+  const response = await api.get(`/api/chat/conversations/${conversationId}`);
+  return response.data;
+};
+
+export const createConversation = async (title: string): Promise<Conversation> => {
+  const response = await api.post('/api/chat/conversations', { title });
+  return response.data;
+};
+
 export interface Deployment {
   id: string;
   repo: string;

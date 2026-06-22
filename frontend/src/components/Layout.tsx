@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, MessageSquare, BrainCircuit, Activity, Cpu } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, MessageSquare, BrainCircuit, Activity, Cpu, LogOut } from 'lucide-react';
+import { getAuthenticatedUser, logout } from '../services/api';
 
 interface LayoutProps {
   children: ReactNode;
@@ -8,6 +9,13 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const user = getAuthenticatedUser();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const menuItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
@@ -55,13 +63,28 @@ export default function Layout({ children }: LayoutProps) {
           </nav>
         </div>
 
-        {/* Footer info */}
-        <div className="p-4 border-t border-slate-200 text-xs text-slate-400 flex flex-col space-y-1">
-          <div className="flex items-center space-x-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="text-slate-600 font-medium">Gateway Active</span>
+        {/* Footer info & Logout */}
+        <div className="p-4 border-t border-slate-200 text-xs flex flex-col space-y-3">
+          {user && (
+            <div className="flex flex-col space-y-0.5 min-w-0">
+              <span className="font-semibold text-slate-800 text-sm truncate">{user.name}</span>
+              <span className="text-slate-500 truncate">{user.email}</span>
+            </div>
+          )}
+          
+          <div className="flex items-center justify-between pt-1">
+            <div className="flex items-center space-x-1.5 text-slate-400">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="text-slate-500 font-medium">Gateway Active</span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 rounded-lg transition-colors cursor-pointer"
+              title="Log Out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
-          <span>v1.0.0-Beta</span>
         </div>
       </aside>
 
