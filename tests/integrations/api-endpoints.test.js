@@ -149,11 +149,11 @@ test('REST API Endpoints - POST /api/analysis/rca executes diagnostics', async (
   assert.strictEqual(jsonSent.confidence, 90);
 });
 
-const app = require('../../api/src/index');
+const healthRouter = require('../../api/src/routes/health');
 const axios = require('axios');
 
-test('Health Endpoints - GET /api/health/db returns connected when pgPool query succeeds', async () => {
-  const dbHealthRoute = app._router.stack.find(s => s.route && s.route.path === '/api/health/db');
+test('Health Endpoints - GET /db returns connected when pgPool query succeeds', async () => {
+  const dbHealthRoute = healthRouter.stack.find(s => s.route && s.route.path === '/db' && s.route.methods.get);
   const dbHealthHandler = dbHealthRoute.route.stack[0].handle;
 
   let jsonSent = null;
@@ -173,13 +173,13 @@ test('Health Endpoints - GET /api/health/db returns connected when pgPool query 
   assert.deepStrictEqual(jsonSent, { db: 'connected' });
 });
 
-test('Health Endpoints - GET /api/health/redis returns connected when ping succeeds', async () => {
+test('Health Endpoints - GET /redis returns connected when ping succeeds', async () => {
   const originalRedis = databaseConfig.redisClient;
   databaseConfig.redisClient = {
     ping: async () => 'PONG'
   };
 
-  const redisHealthRoute = app._router.stack.find(s => s.route && s.route.path === '/api/health/redis');
+  const redisHealthRoute = healthRouter.stack.find(s => s.route && s.route.path === '/redis' && s.route.methods.get);
   const redisHealthHandler = redisHealthRoute.route.stack[0].handle;
 
   let jsonSent = null;
@@ -201,13 +201,13 @@ test('Health Endpoints - GET /api/health/redis returns connected when ping succe
   assert.deepStrictEqual(jsonSent, { redis: 'connected' });
 });
 
-test('Health Endpoints - GET /api/health/qdrant returns connected when axios check succeeds', async () => {
+test('Health Endpoints - GET /qdrant returns connected when axios check succeeds', async () => {
   const originalGet = axios.get;
   axios.get = async (url) => {
     return { data: { collections: [] } };
   };
 
-  const qdrantHealthRoute = app._router.stack.find(s => s.route && s.route.path === '/api/health/qdrant');
+  const qdrantHealthRoute = healthRouter.stack.find(s => s.route && s.route.path === '/qdrant' && s.route.methods.get);
   const qdrantHealthHandler = qdrantHealthRoute.route.stack[0].handle;
 
   let jsonSent = null;

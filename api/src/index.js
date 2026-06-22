@@ -3,8 +3,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 require('dotenv').config();
-const databaseConfig = require('../../config/database');
-const axios = require('axios');
 
 const app = express();
 const port = process.env.APP_PORT || 3000;
@@ -28,52 +26,6 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// Database Connection Health Check
-app.get('/api/health/db', async (req, res) => {
-  const pgPool = databaseConfig.pgPool;
-  if (!pgPool) {
-    return res.status(500).json({ db: 'disconnected', error: 'No database connection configured' });
-  }
-  try {
-    await pgPool.query('SELECT 1');
-    res.status(200).json({ db: 'connected' });
-  } catch (err) {
-    res.status(500).json({ db: 'disconnected', error: err.message });
-  }
-});
-
-// Redis Connection Health Check
-app.get('/api/health/redis', async (req, res) => {
-  const redisClient = databaseConfig.redisClient;
-  if (!redisClient) {
-    return res.status(500).json({ redis: 'disconnected', error: 'No Redis connection configured' });
-  }
-  try {
-    await redisClient.ping();
-    res.status(200).json({ redis: 'connected' });
-  } catch (err) {
-    res.status(500).json({ redis: 'disconnected', error: err.message });
-  }
-});
-
-// Qdrant Vector DB Health Check
-app.get('/api/health/qdrant', async (req, res) => {
-  const vectorDbUrl = databaseConfig.vectorDbUrl;
-  if (!vectorDbUrl) {
-    return res.status(500).json({ qdrant: 'disconnected', error: 'No Qdrant URL configured' });
-  }
-  try {
-    const headers = {};
-    if (process.env.QDRANT_API_KEY) {
-      headers['api-key'] = process.env.QDRANT_API_KEY;
-    }
-    await axios.get(`${vectorDbUrl}/collections`, { headers, timeout: 5000 });
-    res.status(200).json({ qdrant: 'connected' });
-  } catch (err) {
-    res.status(500).json({ qdrant: 'disconnected', error: err.message });
-  }
-});
-
 // Import and register routes
 const deploymentsRoute = require('./routes/deployments');
 const incidentsRoute = require('./routes/incidents');
@@ -83,6 +35,7 @@ const chatRoute = require('./routes/chat');
 const slosRoute = require('./routes/slos');
 const metricsRoute = require('./routes/metrics');
 const uipathRoute = require('./routes/uipath');
+const healthRoute = require('./routes/health');
 
 const authMiddleware = require('./middleware/auth');
 
@@ -93,6 +46,7 @@ app.use('/webhooks', webhooksRoute);
 app.use('/api/chat', authMiddleware, chatRoute);
 app.use('/api/slos', authMiddleware, slosRoute);
 app.use('/api/uipath', authMiddleware, uipathRoute);
+app.use('/api/health', healthRoute);
 app.use('/metrics', metricsRoute);
 
 // Error Handling Middleware
