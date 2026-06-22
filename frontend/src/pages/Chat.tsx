@@ -149,17 +149,17 @@ export default function Chat() {
   ];
 
   return (
-    <div className="h-[calc(100vh-10rem)] flex flex-col bg-slate-900/20 border border-slate-800/80 rounded-3xl overflow-hidden backdrop-blur-sm">
+    <div className="h-[calc(100vh-10rem)] flex flex-col bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
       {/* Agent Banner */}
-      <div className="bg-slate-900/60 border-b border-slate-800/80 px-6 py-4 flex items-center justify-between shrink-0">
+      <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
         <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center">
-            <Brain className="w-5 h-5 text-purple-400" />
+          <div className="w-9 h-9 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-center">
+            <Brain className="w-5 h-5 text-purple-600" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-white m-0">Autopilot Copilot</h3>
-            <span className="text-[10px] text-emerald-400 font-mono flex items-center space-x-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <h3 className="text-sm font-bold text-slate-800 m-0 font-sans">Autopilot Copilot</h3>
+            <span className="text-[10px] text-emerald-600 font-medium font-mono flex items-center space-x-1.5 animate-pulse">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
               <span>Available for self-healing actions</span>
             </span>
           </div>
@@ -167,7 +167,7 @@ export default function Chat() {
       </div>
 
       {/* Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/20">
         {messages.map((msg, index) => {
           const isUser = msg.role === 'user';
           return (
@@ -177,7 +177,7 @@ export default function Chat() {
             >
               {/* Agent Profile */}
               {!isUser && (
-                <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center text-white shrink-0 shadow-md">
+                <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center text-white shrink-0 shadow-sm">
                   <Brain className="w-4.5 h-4.5" />
                 </div>
               )}
@@ -186,36 +186,40 @@ export default function Chat() {
               <div className="max-w-[75%] space-y-3">
                 <div className={`px-5 py-3.5 rounded-2xl leading-relaxed text-sm ${
                   isUser 
-                    ? 'bg-purple-600 text-white font-medium rounded-tr-none shadow-lg shadow-purple-600/10' 
-                    : 'bg-slate-900/80 text-slate-100 border border-slate-800 rounded-tl-none'
+                    ? 'bg-blue-600 text-white font-medium rounded-tr-none shadow-sm' 
+                    : 'bg-white text-slate-700 border border-slate-200 rounded-tl-none'
                 }`}>
                   <p className="whitespace-pre-line m-0">{msg.content || (msg.isStreaming && !msg.toolCall ? 'Thinking...' : '')}</p>
                 </div>
 
                 {/* Tool Call Activity log */}
                 {msg.toolCall && (
-                  <div className="bg-slate-950/80 border border-slate-900 rounded-xl p-3.5 space-y-2.5 font-mono text-xs">
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2.5 font-mono text-xs">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2 text-slate-300">
-                        <Cpu className={`w-3.5 h-3.5 ${msg.toolCall.status === 'running' ? 'animate-spin text-amber-500' : 'text-purple-400'}`} />
-                        <span className="font-semibold">Tool call: {msg.toolCall.name}</span>
+                      <div className="flex items-center space-x-2 text-slate-700">
+                        <Cpu className={`w-3.5 h-3.5 ${msg.toolCall.status === 'running' ? 'animate-spin text-amber-500' : 'text-blue-600'}`} />
+                        <span className="font-semibold text-slate-800">Tool call: {msg.toolCall.name}</span>
                       </div>
-                      <span className={`px-2 py-0.5 rounded text-[10px] ${
-                        msg.toolCall.status === 'running' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                        msg.toolCall.status === 'running' 
+                          ? 'bg-amber-50 text-amber-700 border border-amber-200/50 animate-pulse' 
+                          : 'bg-emerald-50 text-emerald-700 border border-emerald-200/50'
                       }`}>
                         {msg.toolCall.status}
                       </span>
                     </div>
 
                     {msg.toolCall.input && (
-                      <div className="text-[10px] text-slate-500 bg-slate-950 p-2 rounded border border-slate-900">
-                        Input: {JSON.stringify(msg.toolCall.input)}
+                      <div className="text-[10px] text-slate-600 bg-white p-2.5 rounded border border-slate-200">
+                        <span className="text-slate-400 block mb-0.5 font-bold text-[8px] uppercase tracking-wider">Input parameters:</span>
+                        {JSON.stringify(msg.toolCall.input)}
                       </div>
                     )}
 
                     {msg.toolCall.result && (
-                      <div className="text-[10px] text-slate-400 max-h-40 overflow-y-auto bg-slate-950/40 p-2 rounded">
-                        Result: <pre className="mt-1 whitespace-pre-wrap">{JSON.stringify(msg.toolCall.result, null, 2)}</pre>
+                      <div className="text-[10px] text-slate-600 max-h-40 overflow-y-auto bg-white p-2.5 rounded border border-slate-200">
+                        <span className="text-slate-400 block mb-0.5 font-bold text-[8px] uppercase tracking-wider">Execution output:</span>
+                        <pre className="mt-1 whitespace-pre-wrap font-mono">{JSON.stringify(msg.toolCall.result, null, 2)}</pre>
                       </div>
                     )}
                   </div>
@@ -224,7 +228,7 @@ export default function Chat() {
 
               {/* User Profile */}
               {isUser && (
-                <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-300 shrink-0 border border-slate-700">
+                <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0 border border-slate-200">
                   <User className="w-4.5 h-4.5" />
                 </div>
               )}
@@ -236,15 +240,15 @@ export default function Chat() {
 
       {/* Suggested Prompts (if no user interaction has occurred or to guide interactions) */}
       {messages.length === 1 && (
-        <div className="px-6 pb-2 grid grid-cols-1 md:grid-cols-3 gap-3 shrink-0">
+        <div className="px-6 pb-4 bg-slate-50/20 grid grid-cols-1 md:grid-cols-3 gap-3 shrink-0">
           {suggestions.map((s, i) => (
             <button
               key={i}
               onClick={() => handleSend(s.prompt)}
-              className="p-3 bg-slate-900/60 border border-slate-800 rounded-xl text-left hover:border-purple-500/50 hover:bg-purple-950/5 transition-all text-xs text-slate-300 flex justify-between items-center group"
+              className="p-3 bg-white border border-slate-200 rounded-xl text-left hover:border-blue-600 hover:bg-blue-50/10 transition-all text-xs text-slate-600 flex justify-between items-center group cursor-pointer shadow-sm"
             >
               <span>{s.title}</span>
-              <ArrowRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-purple-400 group-hover:translate-x-0.5 transition-all" />
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all" />
             </button>
           ))}
         </div>
@@ -253,7 +257,7 @@ export default function Chat() {
       {/* Chat Input Bar */}
       <form 
         onSubmit={(e) => { e.preventDefault(); handleSend(input); }}
-        className="p-4 bg-slate-900/60 border-t border-slate-800/80 flex items-center space-x-3 shrink-0"
+        className="p-4 bg-slate-50 border-t border-slate-200 flex items-center space-x-3 shrink-0"
       >
         <input
           type="text"
@@ -261,12 +265,12 @@ export default function Chat() {
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask about deployments, SLOs, or trigger a self-healing process..."
           disabled={loading}
-          className="flex-1 bg-slate-950 border border-slate-800 text-slate-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500/20 disabled:opacity-50"
+          className="flex-1 bg-white border border-slate-200 text-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/25 disabled:opacity-50 placeholder:text-slate-400"
         />
         <button
           type="submit"
           disabled={!input.trim() || loading}
-          className="p-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white disabled:opacity-40 disabled:hover:bg-purple-600 transition-colors shadow-lg shadow-purple-600/10 shrink-0"
+          className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-40 disabled:hover:bg-blue-600 transition-colors shadow-sm shrink-0 cursor-pointer"
         >
           <Send className="w-4 h-4" />
         </button>

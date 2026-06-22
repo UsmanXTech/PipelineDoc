@@ -62,8 +62,8 @@ export default function DeployProgress() {
   if (loading && !deploy) {
     return (
       <div className="flex flex-col items-center justify-center py-24 space-y-4">
-        <RefreshCw className="w-8 h-8 text-purple-500 animate-spin" />
-        <p className="text-slate-400 text-sm font-mono">Loading deployment pipeline details...</p>
+        <RefreshCw className="w-8 h-8 text-blue-600 animate-spin" />
+        <p className="text-slate-500 text-sm font-mono">Loading deployment pipeline details...</p>
       </div>
     );
   }
@@ -71,14 +71,14 @@ export default function DeployProgress() {
   if (error || !deploy) {
     return (
       <div className="space-y-6">
-        <Link to="/" className="inline-flex items-center space-x-2 text-sm text-slate-400 hover:text-white transition-colors">
+        <Link to="/" className="inline-flex items-center space-x-2 text-sm text-slate-500 hover:text-slate-900 transition-colors">
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Dashboard</span>
         </Link>
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center">
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center shadow-sm">
           <XCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-          <h3 className="text-lg font-bold text-white">Pipeline Session Not Found</h3>
-          <p className="text-sm text-slate-400 mt-2">{error || 'Make sure the deployment ID is correct.'}</p>
+          <h3 className="text-lg font-bold text-slate-900">Pipeline Session Not Found</h3>
+          <p className="text-sm text-slate-500 mt-2">{error || 'Make sure the deployment ID is correct.'}</p>
         </div>
       </div>
     );
@@ -106,19 +106,19 @@ export default function DeployProgress() {
   const activeStageIndex = deploy.status === 'success' ? 5 : getStageIndex(deploy.current_stage || null);
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in text-left">
       {/* Header Info */}
       <div className="space-y-2">
-        <Link to="/" className="inline-flex items-center space-x-2 text-xs text-slate-400 hover:text-white transition-colors">
+        <Link to="/" className="inline-flex items-center space-x-2 text-xs text-slate-500 hover:text-slate-900 transition-colors">
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to Dashboard</span>
         </Link>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
           <div className="space-y-1">
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white m-0 uppercase flex items-center space-x-3">
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 m-0 uppercase flex items-center space-x-3">
               <span>Pipeline Run Tracking</span>
             </h1>
-            <p className="text-xs text-slate-500 font-mono">Run UUID: {id}</p>
+            <p className="text-xs text-slate-400 font-mono">Run UUID: {id}</p>
           </div>
 
           <div className="flex items-center space-x-3">
@@ -126,7 +126,7 @@ export default function DeployProgress() {
               <button
                 onClick={handleRollback}
                 disabled={triggering || rollbackSuccess}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 text-white font-bold text-sm shadow-lg shadow-rose-500/20 flex items-center space-x-2 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-sm flex items-center space-x-2 transition-colors cursor-pointer disabled:opacity-50"
               >
                 <RotateCcw className={`w-4 h-4 ${triggering ? 'animate-spin' : ''}`} />
                 <span>{rollbackSuccess ? 'Rollback Triggered' : 'Force Safe Rollback'}</span>
@@ -135,7 +135,7 @@ export default function DeployProgress() {
             
             <button 
               onClick={fetchStatus}
-              className="p-2.5 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white rounded-xl transition-all"
+              className="p-2.5 bg-white border border-slate-200 text-slate-600 hover:text-slate-900 rounded-xl shadow-sm cursor-pointer transition-colors"
             >
               <RefreshCw className="w-4 h-4" />
             </button>
@@ -145,35 +145,35 @@ export default function DeployProgress() {
 
       {/* Overview Stat Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm">
-          <span className="text-xs text-slate-500 block">Status</span>
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+          <span className="text-xs text-slate-400 block font-medium">Status</span>
           <span className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-xs font-semibold mt-2 ${
-            deploy.status === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-            deploy.status === 'failure' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' :
-            deploy.status === 'running' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse' :
-            'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+            deploy.status === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/50' :
+            deploy.status === 'failure' ? 'bg-rose-50 text-rose-700 border border-rose-200/50' :
+            deploy.status === 'running' ? 'bg-blue-50 text-blue-700 border border-blue-200/50 animate-pulse' :
+            'bg-cyan-50 text-cyan-700 border border-cyan-200/50'
           }`}>
             {deploy.status}
           </span>
         </div>
 
-        <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm">
-          <span className="text-xs text-slate-500 block">Deploy Strategy</span>
-          <span className="text-sm font-semibold text-slate-200 block mt-2 capitalize font-mono">{deploy.strategy || 'rolling'}</span>
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+          <span className="text-xs text-slate-400 block font-medium">Deploy Strategy</span>
+          <span className="text-sm font-semibold text-slate-800 block mt-2 capitalize font-mono">{deploy.strategy || 'rolling'}</span>
         </div>
 
-        <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm">
-          <span className="text-xs text-slate-500 block">Risk Score</span>
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+          <span className="text-xs text-slate-400 block font-medium">Risk Score</span>
           <span className={`text-sm font-semibold block mt-2 font-mono ${
-            (deploy.risk_score || 0) > 50 ? 'text-rose-400' : 'text-emerald-400'
+            (deploy.risk_score || 0) > 50 ? 'text-rose-600' : 'text-emerald-600'
           }`}>
             {deploy.risk_score !== null ? `${deploy.risk_score}/100` : 'Not Evaluated'}
           </span>
         </div>
 
-        <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm">
-          <span className="text-xs text-slate-500 block">Current Stage</span>
-          <span className="text-sm font-semibold text-slate-200 block mt-2 truncate font-mono">
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+          <span className="text-xs text-slate-400 block font-medium">Current Stage</span>
+          <span className="text-sm font-semibold text-slate-800 block mt-2 truncate font-mono">
             {deploy.status === 'success' ? 'Pipeline Completed' : (deploy.current_stage || 'Queueing...')}
           </span>
         </div>
@@ -182,14 +182,14 @@ export default function DeployProgress() {
       {/* Main Timeline Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Pipeline Timeline */}
-        <div className="lg:col-span-2 bg-slate-900/30 border border-slate-800/80 rounded-3xl p-6 md:p-8 space-y-8">
-          <div className="border-b border-slate-800 pb-4 flex items-center justify-between">
-            <h3 className="text-lg font-bold text-white m-0">Execution Roadmap</h3>
-            <span className="text-xs font-mono text-slate-500">4 Core Milestones</span>
+        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-3xl p-6 md:p-8 space-y-8 shadow-sm">
+          <div className="border-b border-slate-100 pb-4 flex items-center justify-between">
+            <h3 className="text-lg font-bold text-slate-900 m-0">Execution Roadmap</h3>
+            <span className="text-xs font-mono text-slate-400">4 Core Milestones</span>
           </div>
 
           {/* Vertical progress flow */}
-          <div className="relative pl-8 space-y-8 before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-800">
+          <div className="relative pl-8 space-y-8 before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
             {allStages.map((stage) => {
               const isPassed = activeStageIndex > stage.step;
               const isCurrent = activeStageIndex === stage.step && deploy.status === 'running';
@@ -200,12 +200,12 @@ export default function DeployProgress() {
                   {/* Indicator Icon */}
                   <div className={`absolute -left-8 top-1 w-7 h-7 rounded-full border flex items-center justify-center transition-all ${
                     isPassed 
-                      ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' 
+                      ? 'bg-emerald-50 border-emerald-500 text-emerald-600' 
                       : isCurrent 
-                        ? 'bg-amber-500/25 border-amber-500 text-amber-400 animate-pulse' 
+                        ? 'bg-blue-50 border-blue-500 text-blue-600 animate-pulse font-bold' 
                         : isFailed 
-                          ? 'bg-rose-500/25 border-rose-500 text-rose-400' 
-                          : 'bg-slate-950 border-slate-800 text-slate-600'
+                          ? 'bg-rose-50 border-rose-500 text-rose-600 font-bold' 
+                          : 'bg-white border-slate-200 text-slate-400'
                   }`}>
                     {isPassed ? <CheckCircle2 className="w-4 h-4" /> :
                      isFailed ? <XCircle className="w-4 h-4" /> :
@@ -215,13 +215,13 @@ export default function DeployProgress() {
 
                   <div>
                     <h4 className={`text-sm font-bold m-0 ${
-                      isPassed ? 'text-slate-200' :
-                      isCurrent ? 'text-amber-300' :
-                      isFailed ? 'text-rose-400' : 'text-slate-500'
+                      isPassed ? 'text-slate-800' :
+                      isCurrent ? 'text-blue-600' :
+                      isFailed ? 'text-rose-600' : 'text-slate-400'
                     }`}>
                       {stage.name}
                     </h4>
-                    <p className="text-xs text-slate-400 mt-1">{stage.desc}</p>
+                    <p className="text-xs text-slate-500 mt-1">{stage.desc}</p>
                   </div>
                 </div>
               );
@@ -230,24 +230,24 @@ export default function DeployProgress() {
         </div>
 
         {/* Deploy Logs & Details */}
-        <div className="bg-slate-900/30 border border-slate-800/80 rounded-3xl p-6 space-y-6">
-          <h3 className="text-sm font-bold text-white tracking-wider uppercase border-b border-slate-800 pb-3 m-0 flex items-center justify-between">
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-6 shadow-sm">
+          <h3 className="text-sm font-bold text-slate-900 tracking-wider uppercase border-b border-slate-100 pb-3 m-0 flex items-center justify-between">
             <span>Stage Logs</span>
-            <Terminal className="w-4 h-4 text-slate-500" />
+            <Terminal className="w-4 h-4 text-slate-400" />
           </h3>
 
           <div className="space-y-4 font-mono text-xs max-h-96 overflow-y-auto pr-2">
             {deploy.deploy_history && Array.isArray(deploy.deploy_history) ? (
               deploy.deploy_history.map((log: any, i: number) => (
-                <div key={i} className="border-l-2 border-purple-500 pl-3 py-1 bg-slate-900/20">
-                  <span className="text-slate-500 block text-[10px]">
+                <div key={i} className="border-l-2 border-blue-500 pl-3 py-2 bg-slate-50 rounded-r-lg">
+                  <span className="text-slate-400 block text-[9px]">
                     {log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : ''}
                   </span>
-                  <p className="text-slate-300 m-0 mt-0.5">{log.message || log.stage || JSON.stringify(log)}</p>
+                  <p className="text-slate-700 m-0 mt-0.5 font-mono">{log.message || log.stage || JSON.stringify(log)}</p>
                 </div>
               ))
             ) : (
-              <div className="text-slate-500 text-center py-12">
+              <div className="text-slate-400 text-center py-12">
                 <span>No logs recorded for this pipeline run.</span>
               </div>
             )}

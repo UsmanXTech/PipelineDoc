@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const anthropic = require('../../../config/anthropic');
+const anthropic = require('../../../config/ai-client');
 const databaseConfig = require('../../../config/database');
 
 const toolsList = [

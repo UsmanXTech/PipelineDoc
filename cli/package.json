@@ -1,0 +1,13 @@
+{
+  "name": "pipelinedoc-cli",
+  "version": "1.0.0",
+  "description": "Zero-dependency CLI tool for integrating PipelineDoc self-healing features in any CI/CD runner",
+  "main": "pd.js",
+  "bin": {
+    "pd": "./pd.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 0"
+  },
+  "private": true
+}

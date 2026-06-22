@@ -32,7 +32,7 @@ graph TD
 
 ---
 
-## ⚡ Quick Start (&lt; 5 Minutes)
+## ⚡ Quick Start (< 5 Minutes)
 
 Deploy the platform in minutes:
 
@@ -52,39 +52,40 @@ docker-compose up -d
 ### 3. Initialize Schema
 Run database migrations:
 ```bash
-psql -h localhost -U admin -d pipelinedoc -f scripts/db-init.sql
+npm run db:init
 ```
 
-### 4. Run the Test Suites
-Validate installation by running native Node test runners:
+### 4. Bootstrap Dependencies
+Installs packages for root workspace, Express API, and React dashboard concurrently:
 ```bash
-npm install
-node --test tests/**/*.test.js
+npm run bootstrap
 ```
 
-### 5. Launch Backend & Dashboard
-Start the API backend:
+### 5. Start Application (Backend + Dashboard Concurrently)
+Start both development servers in a single terminal:
 ```bash
-cd api
-npm install
 npm run dev
 ```
+- API backend will start and listen on [http://localhost:3000](http://localhost:3000).
+- React dashboard client will spin up on [http://localhost:5173](http://localhost:5173).
 
-In a new terminal window, start the Vite development server:
+Open [http://localhost:5173](http://localhost:5173) in your browser to view the **UiPath Orchestrator Hub & Self-Healing Pipeline Dashboard**!
+
+### 6. Run the Test Suites
+Verify all agent modules are active and working:
 ```bash
-cd frontend
-npm install --legacy-peer-deps
-npm run dev
+npm run test
 ```
-Open `http://localhost:5173` to interact with the PipelineDoc dashboard.
 
 ---
 
 ## 📖 Documentation Index
 
-For detailed guidelines and setup parameters, consult our documentation:
+For detailed guidelines and custom development, consult our documentation:
 
-- 🚀 [Installation and Setup Guide](docs/SETUP.md): Prerequisite installation, DB structure, and system startup.
+- 🚀 [Installation and Setup Guide](docs/SETUP.md): Detailed prerequisite installation, DB schema tables, and system startup.
 - 🧠 [Agent Architectures and Modules](docs/AGENTS.md): How Gatekeeper, Planner, FailureDoctor, Healer, and Monitor work together.
-- 🔌 [Integrations Guide](docs/INTEGRATIONS.md): Connecting webhooks for GitHub, UiPath Maestro Cloud, and Slack bots.
-- 🌐 [API Reference Guide](docs/API.md): Comprehensive descriptions of all REST and SSE endpoints with payload payloads.
+- 🔧 [Developer & Extensibility Guide](docs/ARCHITECTURE_AND_EXTENDING.md): Architecture diagrams, runtime data flows, and code examples for adding custom agents, integrations, or alternative LLM backends (Ollama/Azure OpenAI).
+- 🔌 [CI/CD Project Integration Guide](docs/INTEGRATION_GUIDE.md): Connecting any code repository (GitHub Actions, GitLab CI, or custom bash script) to PipelineDoc via API.
+- 🔌 [Internal Webhooks Guide](docs/INTEGRATIONS.md): Setup details for internal GitHub Webhook, Slack bot tokens, and UiPath Cloud keys.
+- 🌐 [API Reference Guide](docs/API.md): Comprehensive descriptions of all REST and SSE endpoints with payload formats.

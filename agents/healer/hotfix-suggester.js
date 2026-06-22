@@ -1,4 +1,4 @@
-const anthropic = require('../../config/anthropic');
+const aiClient = require('../../config/ai-client');
 const fs = require('fs').promises;
 const path = require('path');
 const axios = require('axios');
@@ -48,19 +48,18 @@ ${fileContent}
 
   let suggestion;
   try {
-    const response = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 1000,
+    const result = await aiClient.generateContent({
       system: systemPrompt,
-      messages: [{ role: 'user', content: userContent }]
+      prompt: userContent,
+      maxTokens: 1000
     });
-    suggestion = JSON.parse(response.content[0].text);
+    suggestion = JSON.parse(result.text);
   } catch (err) {
-    console.error('Claude API call failed in hotfix-suggester:', err.message);
+    console.error('LLM API call failed in hotfix-suggester:', err.message);
     // Return a default suggestion if API fails or returns invalid JSON
     suggestion = {
       title: 'Fix error in ' + filePath,
-      explanation: 'Claude suggestHotfix API fallback.',
+      explanation: 'LLM suggestHotfix API fallback.',
       original: '',
       replacement: '',
       verification_steps: 'Run tests'

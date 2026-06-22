@@ -34,8 +34,8 @@ export default function IncidentDetails() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-24 space-y-4">
-        <RefreshCw className="w-8 h-8 text-purple-500 animate-spin" />
-        <p className="text-slate-400 text-sm font-mono">Analyzing failure logs & telemetry...</p>
+        <RefreshCw className="w-8 h-8 text-blue-600 animate-spin" />
+        <p className="text-slate-500 text-sm font-mono">Analyzing failure logs & telemetry...</p>
       </div>
     );
   }
@@ -43,41 +43,41 @@ export default function IncidentDetails() {
   if (error || !incident) {
     return (
       <div className="space-y-6">
-        <Link to="/" className="inline-flex items-center space-x-2 text-sm text-slate-400 hover:text-white transition-colors">
+        <Link to="/" className="inline-flex items-center space-x-2 text-sm text-slate-500 hover:text-slate-900 transition-colors">
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Dashboard</span>
         </Link>
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center">
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center shadow-sm">
           <AlertOctagon className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-          <h3 className="text-lg font-bold text-white">Incident Report Not Found</h3>
-          <p className="text-sm text-slate-400 mt-2">{error || 'The requested incident ID could not be matched.'}</p>
+          <h3 className="text-lg font-bold text-slate-900">Incident Report Not Found</h3>
+          <p className="text-sm text-slate-500 mt-2">{error || 'The requested incident ID could not be matched.'}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in text-left">
       {/* Navigation & Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
         <div className="space-y-2">
-          <Link to="/" className="inline-flex items-center space-x-2 text-xs text-slate-400 hover:text-white transition-colors">
+          <Link to="/" className="inline-flex items-center space-x-2 text-xs text-slate-500 hover:text-slate-900 transition-colors">
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to Dashboard</span>
           </Link>
           <div className="flex items-center space-x-3">
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white m-0 uppercase">
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 m-0 uppercase">
               Incident RCA Report
             </h1>
-            <span className={`px-3 py-1 rounded-full text-xs font-mono border ${
+            <span className={`px-3 py-1 rounded-full text-xs font-mono border font-semibold ${
               incident.resolved_at 
-                ? 'bg-slate-800/40 text-slate-400 border-slate-700' 
-                : 'bg-rose-500/15 text-rose-400 border-rose-500/30 animate-pulse'
+                ? 'bg-slate-100 text-slate-500 border-slate-200' 
+                : 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse'
             }`}>
               {incident.resolved_at ? 'Resolved' : 'Active'}
             </span>
           </div>
-          <p className="text-xs text-slate-500 font-mono">ID: {incident.id}</p>
+          <p className="text-xs text-slate-400 font-mono">ID: {incident.id}</p>
         </div>
       </div>
 
@@ -86,27 +86,27 @@ export default function IncidentDetails() {
         {/* RCA Details */}
         <div className="lg:col-span-2 space-y-8">
           {/* Diagnostic Root Cause */}
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 md:p-8 space-y-6">
-            <div className="flex items-center space-x-3 border-b border-slate-800 pb-4">
-              <span className="p-2.5 bg-rose-500/10 text-rose-400 rounded-xl">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 space-y-6 shadow-sm">
+            <div className="flex items-center space-x-3 border-b border-slate-100 pb-4">
+              <span className="p-2.5 bg-rose-50 text-rose-600 rounded-xl">
                 <AlertOctagon className="w-5 h-5" />
               </span>
               <div>
-                <h3 className="text-base font-bold text-white m-0">Root Cause Analysis (RCA)</h3>
-                <p className="text-xs text-slate-500">Determined automatically by PipelineDoc failure agent</p>
+                <h3 className="text-base font-bold text-slate-900 m-0">Root Cause Analysis (RCA)</h3>
+                <p className="text-xs text-slate-400">Determined automatically by PipelineDoc failure agent</p>
               </div>
             </div>
 
             <div className="space-y-4">
-              <div className="p-5 bg-slate-950/60 border border-slate-900 rounded-2xl font-mono text-sm text-slate-200">
-                <span className="text-rose-400 font-semibold block mb-1">RCA Summary:</span>
+              <div className="p-5 bg-slate-50 border border-slate-200 rounded-2xl font-mono text-sm text-slate-700">
+                <span className="text-rose-600 font-semibold block mb-1">RCA Summary:</span>
                 {incident.root_cause || 'No clear error log identified.'}
               </div>
 
               {incident.details && (
                 <div className="space-y-3">
                   <span className="text-xs font-bold text-slate-400 tracking-wide uppercase">Raw Stacktrace / Log Snippet</span>
-                  <pre className="p-4 bg-slate-950/80 border border-slate-900/60 rounded-xl overflow-x-auto text-xs text-slate-400 font-mono leading-relaxed max-h-60 overflow-y-auto">
+                  <pre className="p-4 bg-slate-50 border border-slate-200 rounded-xl overflow-x-auto text-xs text-slate-600 font-mono leading-relaxed max-h-60 overflow-y-auto">
                     {typeof incident.details === 'string' 
                       ? incident.details 
                       : JSON.stringify(incident.details, null, 2)}
@@ -117,26 +117,25 @@ export default function IncidentDetails() {
           </div>
 
           {/* AI-Suggested Fix / Mitigation */}
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 md:p-8 space-y-6 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-3xl"></div>
-            <div className="flex items-center space-x-3 border-b border-slate-800 pb-4">
-              <span className="p-2.5 bg-purple-500/10 text-purple-400 rounded-xl">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 space-y-6 shadow-sm">
+            <div className="flex items-center space-x-3 border-b border-slate-100 pb-4">
+              <span className="p-2.5 bg-purple-50 text-purple-600 rounded-xl">
                 <Sparkles className="w-5 h-5" />
               </span>
               <div>
-                <h3 className="text-base font-bold text-white m-0">AI Actionable Remediations</h3>
-                <p className="text-xs text-slate-500">Autonomous repair recommendations & script fixes</p>
+                <h3 className="text-base font-bold text-slate-900 m-0">AI Actionable Remediations</h3>
+                <p className="text-xs text-slate-400">Autonomous repair recommendations & script fixes</p>
               </div>
             </div>
 
             <div className="space-y-4">
-              <div className="p-5 bg-purple-950/10 border border-purple-500/10 rounded-2xl text-slate-200 text-sm leading-relaxed">
-                <span className="text-purple-400 font-semibold block mb-1">Suggested Fix:</span>
+              <div className="p-5 bg-purple-50 border border-purple-100 rounded-2xl text-slate-700 text-sm leading-relaxed">
+                <span className="text-purple-700 font-semibold block mb-1">Suggested Fix:</span>
                 {incident.suggested_fix || incident.resolution || 'No automated remediation plan generated yet.'}
               </div>
 
-              <div className="flex items-center space-x-2 text-xs text-slate-500">
-                <Cpu className="w-4 h-4 text-purple-500" />
+              <div className="flex items-center space-x-2 text-xs text-slate-400 font-medium">
+                <Cpu className="w-4 h-4 text-purple-600" />
                 <span>Fix can be triggered automatically through our conversational Slack commands.</span>
               </div>
             </div>
@@ -146,38 +145,38 @@ export default function IncidentDetails() {
         {/* Sidebar Info */}
         <div className="space-y-8">
           {/* Metadata Card */}
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 space-y-6">
-            <h3 className="text-sm font-bold text-white tracking-wider uppercase border-b border-slate-800 pb-3 m-0">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-6 shadow-sm">
+            <h3 className="text-sm font-bold text-slate-900 tracking-wider uppercase border-b border-slate-100 pb-3 m-0">
               Incident Info
             </h3>
 
             <div className="space-y-4">
               <div>
-                <span className="text-xs text-slate-500 block">Anomaly Category</span>
-                <span className="text-sm font-semibold text-slate-200 capitalize font-mono">
+                <span className="text-xs text-slate-400 block font-medium">Anomaly Category</span>
+                <span className="text-sm font-semibold text-slate-700 capitalize font-mono">
                   {incident.type.replace('_', ' ')}
                 </span>
               </div>
 
               <div>
-                <span className="text-xs text-slate-500 block">Triggered Timestamp</span>
-                <span className="text-sm font-semibold text-slate-200 font-mono">
+                <span className="text-xs text-slate-400 block font-medium">Triggered Timestamp</span>
+                <span className="text-sm font-semibold text-slate-700 font-mono">
                   {new Date(incident.created_at).toLocaleString()}
                 </span>
               </div>
 
               {incident.resolved_at && (
                 <div>
-                  <span className="text-xs text-slate-500 block">Resolved Timestamp</span>
-                  <span className="text-sm font-semibold text-emerald-400 font-mono">
+                  <span className="text-xs text-slate-400 block font-medium">Resolved Timestamp</span>
+                  <span className="text-sm font-semibold text-emerald-600 font-mono">
                     {new Date(incident.resolved_at).toLocaleString()}
                   </span>
                 </div>
               )}
 
               <div>
-                <span className="text-xs text-slate-500 block">Mean Time to Resolution (MTTR)</span>
-                <span className="text-sm font-semibold text-purple-400 font-mono">
+                <span className="text-xs text-slate-400 block font-medium">Mean Time to Resolution (MTTR)</span>
+                <span className="text-sm font-semibold text-purple-600 font-mono">
                   {incident.resolved_at 
                     ? `${Math.round((new Date(incident.resolved_at).getTime() - new Date(incident.created_at).getTime()) / 1000)} seconds`
                     : 'Awaiting resolution...'}
@@ -187,12 +186,12 @@ export default function IncidentDetails() {
           </div>
 
           {/* Healing Policy Card */}
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 space-y-4">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-4 shadow-sm">
             <div className="flex items-center space-x-2.5">
-              <ShieldCheck className="w-5 h-5 text-emerald-400" />
-              <h4 className="text-sm font-bold text-white m-0">Healing Policy Enforced</h4>
+              <ShieldCheck className="w-5 h-5 text-emerald-600" />
+              <h4 className="text-sm font-bold text-slate-900 m-0">Healing Policy Enforced</h4>
             </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <p className="text-xs text-slate-500 leading-relaxed font-medium">
               FailureDoctor and HealingFlow automatically triggered diagnostic orchestration via UiPath Maestro to query host logs and test environments.
             </p>
           </div>

@@ -82,11 +82,11 @@ You should see:
 
 ## 🗄️ 3. Database Schema Initialization
 
-Once PostgreSQL is up, initialize the database tables by executing the setup script:
+Once PostgreSQL is up, initialize the database tables using the convenient root npm script:
 
 ```bash
-# Create tables and schemas using the initialization script
-psql -h localhost -U admin -d pipelinedoc -f scripts/db-init.sql
+# Create tables and schemas from the root directory
+npm run db:init
 ```
 *(Enter the password `secret` when prompted if using the default Docker Compose configuration).*
 
@@ -105,50 +105,47 @@ psql -h localhost -U admin -d pipelinedoc -f scripts/db-init.sql
 To display rich charts and show real-time agent self-healing on the dashboard, run the telemetry generator. It populates historical logs and simulates real-time activity:
 
 ```bash
-# Populate initial history and run live simulation
-node scripts/generate-telemetry.js
+# Populate initial history and run live simulation from root
+npm run simulate
 ```
 
-This script will run in the background (or foreground) and dynamically push simulated logs, deployment check runs, unattended robot runs, and incident triggers.
+This script will run and dynamically push simulated logs, deployment check runs, unattended robot runs, and incident triggers.
 
 ---
 
 ## 🚀 5. Starting the Application Services
 
-Run the application services in development mode:
+You can bootstrap and run all monorepo components (backend + frontend) from the project root directory:
 
-### Step A: Install Root Dependencies
+### Step A: Bootstrap Dependencies
+Installs packages for the root workspace, API server, and React dashboard concurrently:
 ```bash
-npm install
+npm run bootstrap
 ```
 
-### Step B: Start API Gateway (Backend)
+### Step B: Start Application (Concurrently)
+Launch both the Express API backend and Vite frontend dev server at once:
 ```bash
-cd api
-npm install
 npm run dev
 ```
-The API backend will start and listen on [http://localhost:3000](http://localhost:3000).
+- The API backend will listen on [http://localhost:3000](http://localhost:3000).
+- The Vite development server will spin up on [http://localhost:5173](http://localhost:5173). 
 
-### Step C: Start Dashboard Hub (Frontend Client)
-In a new terminal window:
-```bash
-cd frontend
-npm install --legacy-peer-deps
-npm run dev
-```
-The Vite development server will spin up on [http://localhost:5173](http://localhost:5173). 
-Open this address in your browser to view the **UiPath Orchestrator Hub & Self-Healing Pipeline Dashboard**!
+Open [http://localhost:5173](http://localhost:5173) in your browser to view the **UiPath Orchestrator Hub & Self-Healing Pipeline Dashboard**!
+
+*Note: Alternatively, you can start components individually:*
+- Start Backend API only: `npm run dev:api`
+- Start React Dashboard only: `npm run dev:frontend`
 
 ---
 
 ## 🧪 6. Running Test Suites
 
-Before committing or deploying, validate that all agent components are functioning:
+Before committing or deploying, validate that all agent components are functioning by running the root-level test command:
 
 ```bash
-# Run all unit and integration tests from the root directory
-node --test $(find tests -name "*.test.js")
+# Run all unit and integration tests with mock configs
+npm run test
 ```
 
 This will run all 92 tests verifying:

@@ -1,4 +1,4 @@
-const anthropic = require('../../config/anthropic');
+const aiClient = require('../../config/ai-client');
 const databaseConfig = require('../../config/database');
 
 async function checkAndBuildRunbook(rootCause) {
@@ -41,11 +41,12 @@ async function checkAndBuildRunbook(rootCause) {
           }
         } catch (regexErr) {
           // Ignore invalid regex patterns in the DB
+          // e.g. unclosed brackets or wildcards
         }
       }
     }
 
-    // 3. Generate runbook using Claude API
+    // 3. Generate runbook using LLM API
     const systemPrompt = `You are a runbook automation builder.
 Given a recurring root cause, codify a step-by-step troubleshooting and remediation runbook.
 Respond with JSON only, matching this structure:
@@ -58,14 +59,13 @@ Respond with JSON only, matching this structure:
     const userContent = `Root Cause: ${rootCause}
 Generate a runbook to remediate this recurring failure.`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 1000,
+    const result = await aiClient.generateContent({
       system: systemPrompt,
-      messages: [{ role: 'user', content: userContent }]
+      prompt: userContent,
+      maxTokens: 1000
     });
 
-    const responseText = response.content[0].text;
+    const responseText = result.text;
     const cleanedText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
     const runbookData = JSON.parse(cleanedText);
 

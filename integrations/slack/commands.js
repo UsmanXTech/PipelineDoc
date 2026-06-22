@@ -1,6 +1,6 @@
 const axios = require('axios');
 const databaseConfig = require('../../config/database');
-const anthropic = require('../../config/anthropic');
+const anthropic = require('../../config/ai-client');
 
 const toolsList = [
   {

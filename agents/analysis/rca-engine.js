@@ -1,4 +1,4 @@
-const anthropic = require('../../config/anthropic');
+const aiClient = require('../../config/ai-client');
 const { pgPool } = require('../../config/database');
 const { ingestLogs } = require('./log-ingester');
 const { parseDiff } = require('./diff-parser');
@@ -63,15 +63,14 @@ ${similarIncidentsContext}
 ${diff || 'No code changes (diff is empty).'}
 `;
 
-  // 2. Query Claude API with retry logic
+  // 2. Query LLM API with retry logic
   const responseText = await retryWithBackoff(async () => {
-    const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 1500,
+    const result = await aiClient.generateContent({
       system: systemPrompt,
-      messages: [{ role: 'user', content: userContent }],
+      prompt: userContent,
+      maxTokens: 1500
     });
-    return message.content[0].text;
+    return result.text;
   });
 
   // 3. Parse JSON response

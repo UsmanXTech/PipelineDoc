@@ -1,6 +1,25 @@
 {
+  "name": "pipelinedoc-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "api",
+    "frontend",
+    "cli"
+  ],
+  "scripts": {
+    "bootstrap": "npm install && npm install --workspace=api && npm install --workspace=frontend && npm install --workspace=cli",
+    "dev:api": "npm run dev --workspace=api",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev": "npm run dev --workspace=api & npm run dev --workspace=frontend",
+    "build:frontend": "npm run build --workspace=frontend",
+    "test": "LLM_PROVIDER=anthropic node --test tests/**/*.test.js",
+    "simulate": "node scripts/generate-telemetry.js",
+    "db:init": "psql -h localhost -U admin -d pipelinedoc -f scripts/db-init.sql"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.2",
+    "@google/genai": "^2.9.0",
     "axios": "^1.18.0",
     "dotenv": "^17.4.2",
     "ioredis": "^5.11.1",

@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const anthropic = require('../../config/anthropic');
+const aiClient = require('../../config/ai-client');
 const databaseConfig = require('../../config/database');
 const slackClient = require('../../integrations/slack/client');
 
@@ -32,7 +32,7 @@ async function generatePostmortem(incidentId) {
       }
     }
 
-    // 2. Format incident timeline context for Claude
+    // 2. Format incident timeline context for Claude/Gemini
     const timelineContext = `
 Incident ID: ${incident.id}
 Failure Type: ${incident.type}
@@ -51,7 +51,7 @@ Deployment Started: ${deployment.started_at}
 Deployment Completed: ${deployment.completed_at}` : ''}
 `;
 
-    // 3. Ask Claude to generate the Markdown postmortem
+    // 3. Ask LLM to generate the Markdown postmortem
     const systemPrompt = `You are a Principal Reliability Engineer.
 Generate a structured, professional Postmortem in Markdown based on the incident metadata.
 The markdown must contain the following exact sections:
@@ -63,14 +63,13 @@ The markdown must contain the following exact sections:
 
 Do not include any chat prefix or suffix. Output only the markdown document.`;
 
-    const response = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 1500,
+    const result = await aiClient.generateContent({
       system: systemPrompt,
-      messages: [{ role: 'user', content: timelineContext }]
+      prompt: timelineContext,
+      maxTokens: 1500
     });
 
-    const postmortemMarkdown = response.content[0].text;
+    const postmortemMarkdown = result.text;
 
     // 4. Save to filesytem
     const postmortemDir = path.join(__dirname, '../../postmortems');
