@@ -36,9 +36,11 @@ const slosRoute = require('./routes/slos');
 const metricsRoute = require('./routes/metrics');
 const uipathRoute = require('./routes/uipath');
 const healthRoute = require('./routes/health');
+const authRoute = require('./routes/auth');
 
 const authMiddleware = require('./middleware/auth');
 
+app.use('/api/auth', authRoute);
 app.use('/api/deployments', authMiddleware, deploymentsRoute);
 app.use('/api/incidents', authMiddleware, incidentsRoute);
 app.use('/api/analysis', authMiddleware, analysisRoute);
@@ -58,6 +60,18 @@ app.use((err, req, res, next) => {
 // Start Express Server
 app.listen(port, () => {
   console.log(`PipelineDoc API Server listening on port ${port} in ${process.env.NODE_ENV || 'development'} mode.`);
+  
+  // Seed guest user if database connection is active
+  const pgPool = databaseConfig.pgPool;
+  if (pgPool) {
+    pgPool.query(`
+      INSERT INTO users (id, email, password_hash, name)
+      VALUES ('00000000-0000-0000-0000-000000000000', 'guest@pipelinedoc.local', 'disabled', 'Guest User')
+      ON CONFLICT (email) DO NOTHING;
+    `).catch(err => {
+      console.warn('Could not seed guest user (expected in mock tests):', err.message);
+    });
+  }
 });
 
 module.exports = app;

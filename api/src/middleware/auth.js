@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 module.exports = function authMiddleware(req, res, next) {
   // Bypass auth in testing and development environments
   if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development' || process.env.BYPASS_AUTH === 'true') {
+    req.user = { id: '00000000-0000-0000-0000-000000000000', email: 'guest@pipelinedoc.local', name: 'Guest User' };
     return next();
   }
 

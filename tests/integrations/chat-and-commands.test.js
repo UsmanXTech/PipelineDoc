@@ -13,6 +13,7 @@ const originalAxiosPost = axios.post;
 let dbQueries = [];
 let axiosPosts = [];
 let anthropicMessagesCreated = [];
+let mockMessages = [];
 
 const mockPgPool = {
   query: async (sql, params) => {
@@ -51,6 +52,22 @@ const mockPgPool = {
       return {
         rows: [{ id: 'mock-inserted-deploy-id' }]
       };
+    }
+    if (sqlLower.includes('insert into conversations')) {
+      return {
+        rows: [{ id: 'mock-conversation-id' }]
+      };
+    }
+    if (sqlLower.includes('insert into messages')) {
+      mockMessages.push({
+        role: params[1],
+        content: params[2],
+        thought_signature: params[3] || null
+      });
+      return { rows: [] };
+    }
+    if (sqlLower.includes('from messages')) {
+      return { rows: [...mockMessages] };
     }
     return { rows: [] };
   }
@@ -110,6 +127,7 @@ const commands = require('../../integrations/slack/commands');
 
 test('Chat Router - POST /api/chat returns SSE stream text', async () => {
   anthropicMessagesCreated = [];
+  mockMessages = [];
 
   let headerSent = {};
   let bodySent = '';
@@ -145,6 +163,7 @@ test('Chat Router - POST /api/chat returns SSE stream text', async () => {
 
 test('Chat Router - POST /api/chat handles tool execution workflow', async () => {
   anthropicMessagesCreated = [];
+  mockMessages = [];
 
   let bodySent = '';
   let ended = false;

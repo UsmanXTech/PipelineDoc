@@ -249,9 +249,76 @@ async function executeTool(name, input) {
   }
 }
 
+// GET /api/chat/conversations - List user's conversations
+router.get('/conversations', async (req, res) => {
+  const pgPool = databaseConfig.pgPool;
+  if (!pgPool) return res.status(500).json({ error: 'Database not initialized' });
+  const userId = req.user ? req.user.id : '00000000-0000-0000-0000-000000000000';
+
+  try {
+    const result = await pgPool.query(
+      'SELECT id, title, created_at, updated_at FROM conversations WHERE user_id = $1 ORDER BY updated_at DESC',
+      [userId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching conversations:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// GET /api/chat/conversations/:id - Get messages for a specific conversation
+router.get('/conversations/:id', async (req, res) => {
+  const pgPool = databaseConfig.pgPool;
+  if (!pgPool) return res.status(500).json({ error: 'Database not initialized' });
+  const userId = req.user ? req.user.id : '00000000-0000-0000-0000-000000000000';
+  const conversationId = req.params.id;
+
+  try {
+    // Verify ownership
+    const convCheck = await pgPool.query(
+      'SELECT id FROM conversations WHERE id = $1 AND user_id = $2',
+      [conversationId, userId]
+    );
+    if (convCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+
+    const result = await pgPool.query(
+      'SELECT id, role, content, thought_signature, created_at FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
+      [conversationId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching messages:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// POST /api/chat/conversations - Create a new conversation container
+router.post('/conversations', async (req, res) => {
+  const pgPool = databaseConfig.pgPool;
+  if (!pgPool) return res.status(500).json({ error: 'Database not initialized' });
+  const userId = req.user ? req.user.id : '00000000-0000-0000-0000-000000000000';
+  const { title } = req.body;
+
+  try {
+    const result = await pgPool.query(
+      'INSERT INTO conversations (user_id, title) VALUES ($1, $2) RETURNING id, title, created_at, updated_at',
+      [userId, title ? title.trim() : 'New Conversation']
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error('Error creating conversation:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 // POST /api/chat - Chat with PipelineDoc assistant
 router.post('/', async (req, res) => {
-  const { message, conversation_history } = req.body;
+  const { message, conversation_history, conversation_id } = req.body;
+  const pgPool = databaseConfig.pgPool;
+  const userId = req.user ? req.user.id : '00000000-0000-0000-0000-000000000000';
 
   if (!message) {
     return res.status(400).json({ error: 'Message is required' });
@@ -276,25 +343,71 @@ router.post('/', async (req, res) => {
 Answer in plain English. Be concise.
 CRITICAL: If asked to take an action (such as triggering a deploy, triggering a rollback, or running a UiPath job), you MUST first ask the user for confirmation in plain text. Do NOT call the tool until the user has explicitly confirmed in the conversation history. Once they confirm, you may proceed to call the tool.`;
 
-  // Format conversation history for Claude
-  const formattedMessages = [];
-  if (Array.isArray(conversation_history)) {
-    for (const msg of conversation_history) {
-      const role = msg.role || (msg.isUser ? 'user' : 'assistant');
-      const content = msg.content || msg.text || '';
-      if (role && content) {
-        formattedMessages.push({ role, content });
-      }
-    }
-  }
-
-  // Add the current user message
-  formattedMessages.push({ role: 'user', content: message });
+  let activeConversationId = conversation_id;
 
   try {
+    // 1. Create or use active conversation in DB if pool is available
+    if (pgPool) {
+      if (!activeConversationId) {
+        let title = message.trim().substring(0, 35);
+        if (message.trim().length > 35) title += '...';
+        
+        const convResult = await pgPool.query(
+          'INSERT INTO conversations (user_id, title) VALUES ($1, $2) RETURNING id',
+          [userId, title]
+        );
+        activeConversationId = (convResult && convResult.rows && convResult.rows.length > 0)
+          ? convResult.rows[0].id
+          : '00000000-0000-0000-0000-000000000000'; // safe fallback
+      }
+
+      // Stream the metadata event containing active conversationId
+      res.write(`data: ${JSON.stringify({ type: 'metadata', conversationId: activeConversationId })}\n\n`);
+
+      // 2. Save user message to database
+      await pgPool.query(
+        'INSERT INTO messages (conversation_id, role, content) VALUES ($1, $2, $3)',
+        [activeConversationId, 'user', message]
+      );
+    }
+
+    // 3. Build history payload
+    const formattedMessages = [];
+    if (pgPool && activeConversationId) {
+      // Load previous messages from database
+      const dbMessages = await pgPool.query(
+        'SELECT role, content, thought_signature FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC',
+        [activeConversationId]
+      );
+      if (dbMessages && dbMessages.rows) {
+        dbMessages.rows.forEach(m => {
+          formattedMessages.push({
+            role: m.role,
+            content: m.content,
+            thought_signature: m.thought_signature
+          });
+        });
+      }
+    } else if (Array.isArray(conversation_history)) {
+      // Fallback for tests or when DB is disabled
+      for (const msg of conversation_history) {
+        const role = msg.role || (msg.isUser ? 'user' : 'assistant');
+        const content = msg.content || msg.text || '';
+        if (role && content) {
+          formattedMessages.push({ role, content, thought_signature: msg.thought_signature });
+        }
+      }
+      formattedMessages.push({ role: 'user', content: message });
+    } else {
+      formattedMessages.push({ role: 'user', content: message });
+    }
+
     let currentMessages = [...formattedMessages];
     let done = false;
     let finalModel = 'claude-3-5-sonnet-20241022';
+    
+    let assistantFullResponse = '';
+    let assistantThoughtSignature = null;
 
     while (!done) {
       const response = await anthropic.messages.create({
@@ -309,12 +422,11 @@ CRITICAL: If asked to take an action (such as triggering a deploy, triggering a 
       const toolCalls = response.content.filter(c => c.type === 'tool_use');
 
       if (textBlock && textBlock.text) {
-        // Stream text chunk
+        assistantFullResponse += textBlock.text;
         res.write(`data: ${JSON.stringify({ type: 'text', text: textBlock.text })}\n\n`);
       }
 
       if (toolCalls.length > 0) {
-        // Append assistant tool_use message to history
         currentMessages.push({
           role: 'assistant',
           content: response.content
@@ -322,7 +434,6 @@ CRITICAL: If asked to take an action (such as triggering a deploy, triggering a 
 
         const toolResults = [];
         for (const toolCall of toolCalls) {
-          // Stream start event
           res.write(`data: ${JSON.stringify({ type: 'tool_start', name: toolCall.name, input: toolCall.input })}\n\n`);
 
           let result;
@@ -332,7 +443,6 @@ CRITICAL: If asked to take an action (such as triggering a deploy, triggering a 
             result = { error: err.message };
           }
 
-          // Stream result event
           res.write(`data: ${JSON.stringify({ type: 'tool_result', name: toolCall.name, result })}\n\n`);
 
           toolResults.push({
@@ -342,16 +452,31 @@ CRITICAL: If asked to take an action (such as triggering a deploy, triggering a 
           });
         }
 
-        // Append tool results to history
         currentMessages.push({
           role: 'user',
           content: toolResults
         });
-
-        // Loop runs again to let Claude generate the final explanation based on tool results
       } else {
+        if (response.provider === 'gemini') {
+          const lastToolUse = response.content.find(c => c.type === 'tool_use');
+          if (lastToolUse && lastToolUse.thought_signature) {
+            assistantThoughtSignature = lastToolUse.thought_signature;
+          }
+        }
         done = true;
       }
+    }
+
+    // 4. Save assistant response to database
+    if (pgPool && activeConversationId && assistantFullResponse) {
+      await pgPool.query(
+        'INSERT INTO messages (conversation_id, role, content, thought_signature) VALUES ($1, $2, $3, $4)',
+        [activeConversationId, 'assistant', assistantFullResponse, assistantThoughtSignature]
+      );
+      await pgPool.query(
+        'UPDATE conversations SET updated_at = NOW() WHERE id = $1',
+        [activeConversationId]
+      );
     }
 
     res.write('data: [DONE]\n\n');
