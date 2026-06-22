@@ -51,6 +51,10 @@ function mapClaudeMessagesToGemini(messages) {
           } catch (e) {
             responseData = { result: block.content };
           }
+          // Gemini requires the response field to be a JSON object, not an array or primitive
+          if (Array.isArray(responseData) || typeof responseData !== 'object' || responseData === null) {
+            responseData = { result: responseData };
+          }
           parts.push({
             functionResponse: {
               name,
