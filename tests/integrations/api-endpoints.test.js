@@ -148,3 +148,83 @@ test('REST API Endpoints - POST /api/analysis/rca executes diagnostics', async (
   assert.strictEqual(jsonSent.failure_type, 'environment_issue');
   assert.strictEqual(jsonSent.confidence, 90);
 });
+
+const app = require('../../api/src/index');
+const axios = require('axios');
+
+test('Health Endpoints - GET /api/health/db returns connected when pgPool query succeeds', async () => {
+  const dbHealthRoute = app._router.stack.find(s => s.route && s.route.path === '/api/health/db');
+  const dbHealthHandler = dbHealthRoute.route.stack[0].handle;
+
+  let jsonSent = null;
+  let statusSent = 200;
+  const res = {
+    status: (code) => {
+      statusSent = code;
+      return res;
+    },
+    json: (data) => {
+      jsonSent = data;
+    }
+  };
+
+  await dbHealthHandler({}, res);
+  assert.strictEqual(statusSent, 200);
+  assert.deepStrictEqual(jsonSent, { db: 'connected' });
+});
+
+test('Health Endpoints - GET /api/health/redis returns connected when ping succeeds', async () => {
+  const originalRedis = databaseConfig.redisClient;
+  databaseConfig.redisClient = {
+    ping: async () => 'PONG'
+  };
+
+  const redisHealthRoute = app._router.stack.find(s => s.route && s.route.path === '/api/health/redis');
+  const redisHealthHandler = redisHealthRoute.route.stack[0].handle;
+
+  let jsonSent = null;
+  let statusSent = 200;
+  const res = {
+    status: (code) => {
+      statusSent = code;
+      return res;
+    },
+    json: (data) => {
+      jsonSent = data;
+    }
+  };
+
+  await redisHealthHandler({}, res);
+  databaseConfig.redisClient = originalRedis;
+
+  assert.strictEqual(statusSent, 200);
+  assert.deepStrictEqual(jsonSent, { redis: 'connected' });
+});
+
+test('Health Endpoints - GET /api/health/qdrant returns connected when axios check succeeds', async () => {
+  const originalGet = axios.get;
+  axios.get = async (url) => {
+    return { data: { collections: [] } };
+  };
+
+  const qdrantHealthRoute = app._router.stack.find(s => s.route && s.route.path === '/api/health/qdrant');
+  const qdrantHealthHandler = qdrantHealthRoute.route.stack[0].handle;
+
+  let jsonSent = null;
+  let statusSent = 200;
+  const res = {
+    status: (code) => {
+      statusSent = code;
+      return res;
+    },
+    json: (data) => {
+      jsonSent = data;
+    }
+  };
+
+  await qdrantHealthHandler({}, res);
+  axios.get = originalGet;
+
+  assert.strictEqual(statusSent, 200);
+  assert.deepStrictEqual(jsonSent, { qdrant: 'connected' });
+});

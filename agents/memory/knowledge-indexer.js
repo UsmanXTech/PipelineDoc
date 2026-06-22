@@ -37,13 +37,17 @@ async function indexIncident(incidentId, rootCause, resolution, metadata = {}) {
   const qdrantUrl = databaseConfig.vectorDbUrl;
   if (qdrantUrl && process.env.NODE_ENV === 'production') {
     try {
+      const headers = {};
+      if (process.env.QDRANT_API_KEY) {
+        headers['api-key'] = process.env.QDRANT_API_KEY;
+      }
       // 1. Ensure collection exists
       await axios.put(`${qdrantUrl}/collections/incident_knowledge`, {
         vectors: {
           size: 1536,
           distance: 'Cosine'
         }
-      }).catch(err => {
+      }, { headers }).catch(err => {
         // If collection already exists, it might return 400 or 409, which is fine
       });
 
@@ -56,7 +60,7 @@ async function indexIncident(incidentId, rootCause, resolution, metadata = {}) {
             payload
           }
         ]
-      });
+      }, { headers });
       console.log(`Successfully indexed incident ${incidentId} in Qdrant.`);
     } catch (err) {
       console.warn('Qdrant indexing failed, using local memory cache:', err.message);

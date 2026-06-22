@@ -19,7 +19,9 @@ if (postgresUrl) {
 // Initialize Redis Client if URL is provided
 let redis = null;
 if (redisUrl) {
-  redis = new Redis(redisUrl);
+  redis = new Redis(redisUrl, {
+    lazyConnect: true
+  });
 } else {
   console.warn('Warning: REDIS_URL is not defined in the environment.');
 }

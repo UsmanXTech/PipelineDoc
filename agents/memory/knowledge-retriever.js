@@ -21,11 +21,15 @@ async function retrieveSimilarIncidents(queryText, limit = 5) {
 
   if (qdrantUrl && process.env.NODE_ENV === 'production') {
     try {
+      const headers = {};
+      if (process.env.QDRANT_API_KEY) {
+        headers['api-key'] = process.env.QDRANT_API_KEY;
+      }
       const response = await axios.post(`${qdrantUrl}/collections/incident_knowledge/points/search`, {
         vector: queryVector,
         limit,
         with_payload: true
-      });
+      }, { headers });
       const points = response.data?.result || [];
       return {
         similar_incidents: points.map(pt => ({
