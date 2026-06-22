@@ -36,11 +36,16 @@ function mapClaudeMessagesToGemini(messages) {
           parts.push({ text: block.text });
         } else if (block.type === 'tool_use') {
           toolIdToName[block.id] = block.name;
+          const functionCall = {
+            name: block.name,
+            args: block.input
+          };
+          const thoughtSig = block.thought_signature || block.thoughtSignature || block.thought;
+          if (thoughtSig) {
+            functionCall.thoughtSignature = thoughtSig;
+          }
           parts.push({
-            functionCall: {
-              name: block.name,
-              args: block.input
-            }
+            functionCall
           });
         } else if (block.type === 'tool_result') {
           // Deduce tool name from ID mapping or parsing
@@ -152,20 +157,24 @@ const aiClient = {
           }
         });
 
-        const functionCalls = response.functionCalls || [];
         const content = [];
-
         if (response.text) {
           content.push({ type: 'text', text: response.text });
         }
 
-        functionCalls.forEach((call, index) => {
-          content.push({
-            type: 'tool_use',
-            id: `call_${call.name}_${index}`,
-            name: call.name,
-            input: call.args
-          });
+        const parts = response.candidates?.[0]?.content?.parts || [];
+        let callIndex = 0;
+        parts.forEach(part => {
+          if (part.functionCall) {
+            const call = part.functionCall;
+            content.push({
+              type: 'tool_use',
+              id: `call_${call.name}_${callIndex++}`,
+              name: call.name,
+              input: call.args,
+              thought_signature: call.thoughtSignature || call.thought_signature || call.thought
+            });
+          }
         });
 
         return {
