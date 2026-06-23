@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const axios = require('axios');
-const databaseConfig = require('../../config/database');
+const databaseConfig = require('../../backend/config/database');
 
 // Mock Redis client
 const originalRedisClient = databaseConfig.redisClient;
@@ -34,7 +34,7 @@ test('UiPath Test Cloud - Access Token retrieves and caches token in Redis', asy
     }
   };
 
-  const { getAccessToken } = require('../../integrations/uipath/test-cloud');
+  const { getAccessToken } = require('../../backend/integrations/uipath/test-cloud');
 
   // First call should query OAuth and store token in Redis
   const token1 = await getAccessToken();
@@ -50,14 +50,14 @@ test('UiPath Test Cloud - Access Token retrieves and caches token in Redis', asy
 });
 
 test('UiPath Test Cloud - triggerTestSuite falls back to mock in non-prod', async () => {
-  const { triggerTestSuite } = require('../../integrations/uipath/test-cloud');
+  const { triggerTestSuite } = require('../../backend/integrations/uipath/test-cloud');
   const result = await triggerTestSuite(111, 'Production');
   assert.ok(result.executionId.startsWith('mock-exec-'));
   assert.strictEqual(result.status, 'pending');
 });
 
 test('UiPath Test Cloud - getTestReport processes mock results correctly', async () => {
-  const { getTestReport } = require('../../integrations/uipath/test-cloud');
+  const { getTestReport } = require('../../backend/integrations/uipath/test-cloud');
   
   const reportPass = await getTestReport('mock-exec-pass');
   assert.strictEqual(reportPass.status, 'Passed');
@@ -74,7 +74,7 @@ test.after(() => {
   axios.get = originalGet;
   databaseConfig.redisClient = originalRedisClient;
 
-  const { pgPool } = require('../../config/database');
+  const { pgPool } = require('../../backend/config/database');
   if (pgPool && typeof pgPool.end === 'function') {
     pgPool.end().catch(() => {});
   }

@@ -81,22 +81,11 @@ These are the subagents. Each one owns specific tasks in the plan below.
 - [x] **0.1.2** Create the following folder structure exactly:
   ```
   pipelinedoc/
-  ├── agents/
-  │   ├── analysis/          # Failure Doctor logic
-  │   ├── gatekeeper/        # Pre-deploy checks
-  │   ├── planner/           # Deploy strategy
-  │   ├── monitor/           # Production watcher
-  │   ├── healer/            # Auto-remediation
-  │   ├── memory/            # Knowledge store
-  │   └── orchestrator/      # Master agent
-  ├── api/                   # REST API server (Node/Express or FastAPI)
+    ├── backend/            # Express API server, agents, config, integrations
+  │   ├── src/
+  │     │     │   └── backend/integrations/                   # REST API server (Node/Express or FastAPI)
   ├── frontend/              # React dashboard
-  ├── integrations/
-  │   ├── github/
-  │   ├── uipath/
-  │   ├── slack/
-  │   └── cloud/
-  ├── infra/                 # Terraform / OCI configs
+    ├── infra/                 # Terraform / OCI configs
   ├── scripts/               # Utility scripts
   ├── tests/                 # Test suites
   ├── docs/                  # Documentation
@@ -157,11 +146,11 @@ These are the subagents. Each one owns specific tasks in the plan below.
 
 - [x] **0.2.2** Set up GitHub Secrets for all env vars in the repo settings (never commit real keys)
 
-- [x] **0.2.3** Create `config/` directory with separate config files per service:
-  - `config/anthropic.js`
-  - `config/github.js`
-  - `config/uipath.js`
-  - `config/database.js`
+- [x] **0.2.3** Create `backend/config/` directory with separate config files per service:
+  - `backend/config/anthropic.js`
+  - `backend/config/github.js`
+  - `backend/config/uipath.js`
+  - `backend/config/database.js`
 
 ---
 
@@ -285,11 +274,11 @@ These are the subagents. Each one owns specific tasks in the plan below.
   npm install -D nodemon eslint
   ```
 
-- [x] **0.5.2** Create `api/src/index.js` entry point with Express server, middleware (helmet, cors, morgan), and health check route `GET /health → { status: "ok" }`
+- [x] **0.5.2** Create `backend/src/index.js` entry point with Express server, middleware (helmet, cors, morgan), and health check route `GET /health → { status: "ok" }`
 
 - [x] **0.5.3** Create route structure:
   ```
-  api/src/routes/
+  backend/src/routes/
   ├── deployments.js
   ├── incidents.js
   ├── analysis.js
@@ -322,7 +311,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 1.1 — GitHub Webhook Integration
 **Assigned to:** `@IntegrationAgent`
 
-- [x] **1.1.1** Create `integrations/github/webhook.js` — receives GitHub webhook events
+- [x] **1.1.1** Create `backend/integrations/github/webhook.js` — receives GitHub webhook events
   - Events to listen: `workflow_run`, `check_run`, `push`, `pull_request`
   - Verify webhook signature using `GITHUB_WEBHOOK_SECRET`
   - Route events to appropriate handlers
@@ -336,20 +325,20 @@ These are the subagents. Each one owns specific tasks in the plan below.
 
 - [x] **1.1.3** Test webhook by pushing a commit and verifying the server receives the event (log it to console first)
 
-- [x] **1.1.4** Create `integrations/github/client.js` — GitHub API client:
+- [x] **1.1.4** Create `backend/integrations/github/client.js` — GitHub API client:
   - `getWorkflowLogs(owner, repo, runId)` → fetches raw logs from GitHub Actions
   - `getCommitDiff(owner, repo, sha)` → fetches the diff for a commit
   - `getPRDetails(owner, repo, prNumber)` → fetches PR metadata
   - `createPRComment(owner, repo, prNumber, body)` → posts comment on PR
 
-- [x] **1.1.5** Write unit test for each GitHub client function using mock data in `tests/integrations/github.test.js`
+- [x] **1.1.5** Write unit test for each GitHub client function using mock data in `tests/backend/integrations/github.test.js`
 
 ---
 
 ### 1.2 — Log Ingestion Pipeline
 **Assigned to:** `@AnalysisAgent`
 
-- [x] **1.2.1** Create `agents/analysis/log-ingester.js`:
+- [x] **1.2.1** Create `backend/agents/analysis/log-ingester.js`:
   - Input: raw GitHub Actions log text (can be very long, 50k+ tokens)
   - Step 1: Strip ANSI color codes from logs
   - Step 2: Remove timestamp prefixes
@@ -358,7 +347,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
   - Step 5: Truncate to 8000 tokens max for Claude API input
   - Output: structured object `{ sections: [], errors: [], warnings: [], truncated: boolean }`
 
-- [x] **1.2.2** Create `agents/analysis/diff-parser.js`:
+- [x] **1.2.2** Create `backend/agents/analysis/diff-parser.js`:
   - Input: raw git diff text
   - Extracts: list of changed files, lines added/removed per file, new function names added
   - Output: `{ files: [{path, additions, deletions, isNew, isDeleted}], summary: string }`
@@ -370,7 +359,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 1.3 — Root Cause Analysis Engine
 **Assigned to:** `@AnalysisAgent`
 
-- [x] **1.3.1** Create `agents/analysis/rca-engine.js` — the core Failure Doctor:
+- [x] **1.3.1** Create `backend/agents/analysis/rca-engine.js` — the core Failure Doctor:
   - Function: `analyzeFailure({ logs, diff, commitMessage, previousRuns })`
   - Calls Claude API (model: `claude-sonnet-4-6`) with the following system prompt:
     ```
@@ -401,13 +390,13 @@ These are the subagents. Each one owns specific tasks in the plan below.
 
 - [x] **1.3.3** Save every RCA result to `incidents` table in Postgres with `raw_logs`, `root_cause`, `type`
 
-- [x] **1.3.4** Create `agents/analysis/blame-attribution.js`:
+- [x] **1.3.4** Create `backend/agents/analysis/blame-attribution.js`:
   - Input: commit SHA, RCA result
   - Calls GitHub API to get commit author from the SHA
   - Checks the last 5 commits to the affected file
   - Output: `{ author_email, author_name, commit_sha, blame_confidence }`
 
-- [x] **1.3.5** Create `agents/analysis/flaky-detector.js`:
+- [x] **1.3.5** Create `backend/agents/analysis/flaky-detector.js`:
   - Queries last 10 runs of the same workflow from `incidents` table
   - If same error appears >3 times in 10 runs: flag as flaky, confidence = high
   - If same error appeared and passed on retry: flag as flaky
@@ -418,7 +407,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 1.4 — Failure Notification
 **Assigned to:** `@IntegrationAgent`
 
-- [x] **1.4.1** Create `integrations/slack/client.js`:
+- [x] **1.4.1** Create `backend/integrations/slack/client.js`:
   - Function: `sendDiagnosisAlert(channel, diagnosis)` — posts formatted Slack message
   - Format must include:
     - ❌ header with repo name and branch
@@ -434,11 +423,11 @@ These are the subagents. Each one owns specific tasks in the plan below.
   - Install to your workspace
   - Copy `SLACK_BOT_TOKEN` and `SLACK_SIGNING_SECRET` to `.env`
 
-- [x] **1.4.3** Create `integrations/github/pr-commenter.js`:
+- [x] **1.4.3** Create `backend/integrations/github/pr-commenter.js`:
   - After RCA on a PR, post a comment to the PR with the diagnosis
   - Comment format: collapsible `<details>` block with full diagnosis + fix suggestions
 
-- [x] **1.4.4** Wire everything together in `agents/orchestrator/failure-flow.js`:
+- [x] **1.4.4** Wire everything together in `backend/agents/orchestrator/failure-flow.js`:
   ```
   GitHub webhook (workflow_run failed)
     → fetch logs (IntegrationAgent)
@@ -475,7 +464,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 2.1 — Risk Scoring Engine
 **Assigned to:** `@GatekeeperAgent`
 
-- [x] **2.1.1** Create `agents/gatekeeper/risk-scorer.js`:
+- [x] **2.1.1** Create `backend/agents/gatekeeper/risk-scorer.js`:
   - Input: PR diff, changed files list, author history from DB
   - Scoring model (0–100, higher = riskier):
     - Files changed > 20: +20 points
@@ -488,19 +477,19 @@ These are the subagents. Each one owns specific tasks in the plan below.
     - Config files changed (`.env`, `docker-compose`, `terraform`): +20 points
   - Risk levels: `low (0-30)` | `medium (31-60)` | `high (61-80)` | `critical (81-100)`
 
-- [x] **2.1.2** Create `agents/gatekeeper/breaking-change-detector.js`:
+- [x] **2.1.2** Create `backend/agents/gatekeeper/breaking-change-detector.js`:
   - Checks if any exported function signatures changed (TypeScript AST parsing)
   - Checks if REST API routes were removed or parameters changed
   - Checks if DB schema columns were dropped or renamed (look for `DROP COLUMN`, `RENAME`)
   - Checks if environment variable names were changed
   - Output: `{ has_breaking_changes: boolean, changes: [{ type, description, file }] }`
 
-- [x] **2.1.3** Create `agents/gatekeeper/dependency-scanner.js`:
+- [x] **2.1.3** Create `backend/agents/gatekeeper/dependency-scanner.js`:
   - Reads `package.json` or `requirements.txt` diff
   - Calls Snyk API (free tier) or OSV.dev API (free) to check for known CVEs in new/updated packages
   - Output: `{ vulnerabilities: [{ package, version, severity, cve_id, fix_version }] }`
 
-- [x] **2.1.4** Create `agents/gatekeeper/secret-detector.js`:
+- [x] **2.1.4** Create `backend/agents/gatekeeper/secret-detector.js`:
   - Scans diff for patterns: API keys, JWT secrets, passwords in code
   - Patterns to detect: `sk-`, `AIza`, `AKIA`, `ghp_`, base64 strings >40 chars, strings containing `password=` or `secret=`
   - Output: `{ secrets_found: boolean, findings: [{ file, line, pattern_type }] }`
@@ -510,7 +499,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 2.2 — Pre-Deploy Gate Decision
 **Assigned to:** `@GatekeeperAgent`
 
-- [x] **2.2.1** Create `agents/gatekeeper/gate-decision.js`:
+- [x] **2.2.1** Create `backend/agents/gatekeeper/gate-decision.js`:
   - Aggregates: risk score + breaking changes + vulnerabilities + secret scan
   - Decision rules:
     - `secrets_found = true` → **BLOCK** (no exceptions)
@@ -534,7 +523,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 2.3 — UiPath Test Cloud Integration
 **Assigned to:** `@TestAgent`
 
-- [x] **2.3.1** Create `integrations/uipath/test-cloud.js`:
+- [x] **2.3.1** Create `backend/integrations/uipath/test-cloud.js`:
   - Function: `triggerTestSuite(suiteId, environment)` → starts a test suite run
   - Function: `pollTestResults(executionId)` → polls every 15s until complete
   - Function: `getTestReport(executionId)` → returns pass/fail/flaky per test case
@@ -570,7 +559,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 3.1 — Strategy Selector
 **Assigned to:** `@PlannerAgent`
 
-- [x] **3.1.1** Create `agents/planner/strategy-selector.js`:
+- [x] **3.1.1** Create `backend/agents/planner/strategy-selector.js`:
   - Input: risk score, changed services, number of users affected, time of day
   - Strategy rules:
     - `risk_score >= 61`: **canary** (5% → 25% → 100% with health checks between)
@@ -579,12 +568,12 @@ These are the subagents. Each one owns specific tasks in the plan below.
     - DB migration present: **maintenance window** (drain traffic, migrate, deploy, restore)
   - Output: `{ strategy: string, stages: [{ traffic_percent, wait_minutes, health_checks }] }`
 
-- [x] **3.1.2** Create `agents/planner/time-window-advisor.js`:
+- [x] **3.1.2** Create `backend/agents/planner/time-window-advisor.js`:
   - Queries `deployments` table for historical traffic patterns by hour/day
   - Recommends lowest-traffic 2-hour windows for the next 48 hours
   - Output: `{ recommended_windows: [{ start, end, risk_level, reason }] }`
 
-- [x] **3.1.3** Create `agents/planner/dependency-resolver.js`:
+- [x] **3.1.3** Create `backend/agents/planner/dependency-resolver.js`:
   - For multi-service repos (monorepo), reads `SERVICE_DEPENDENCIES` config
   - Topologically sorts services so dependencies deploy before dependents
   - Output: `{ deploy_order: ["service-a", "service-b", "service-c"], dependency_graph: {} }`
@@ -594,7 +583,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 3.2 — Rollback Plan Generator
 **Assigned to:** `@PlannerAgent`
 
-- [x] **3.2.1** Create `agents/planner/rollback-planner.js`:
+- [x] **3.2.1** Create `backend/agents/planner/rollback-planner.js`:
   - CRITICAL: Generates rollback steps BEFORE deploy starts, not after failure
   - For each deploy, creates:
     - Previous image tag/commit SHA to roll back to
@@ -628,7 +617,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 3.3 — Deploy Execution Coordination
 **Assigned to:** `@PlannerAgent` + `@OrchestratorAgent`
 
-- [x] **3.3.1** Create `agents/planner/deploy-coordinator.js`:
+- [x] **3.3.1** Create `backend/agents/planner/deploy-coordinator.js`:
   - Reads strategy + rollback plan
   - Executes deploy stages in order:
     1. Pre-deploy: run health check on current prod
@@ -664,7 +653,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 4.1 — Metrics Ingestion
 **Assigned to:** `@MonitorAgent`
 
-- [x] **4.1.1** Create `agents/monitor/metrics-collector.js`:
+- [x] **4.1.1** Create `backend/agents/monitor/metrics-collector.js`:
   - Connects to Prometheus API (if available) or CloudWatch (OCI Monitoring)
   - Polls every 30 seconds for:
     - HTTP error rate (5xx count / total requests)
@@ -674,7 +663,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
     - Pod restart count (K8s)
   - Stores time-series in Redis with 24h TTL (ring buffer per metric)
 
-- [x] **4.1.2** Create `agents/monitor/log-streamer.js`:
+- [x] **4.1.2** Create `backend/agents/monitor/log-streamer.js`:
   - Tails production logs from CloudWatch Logs or a log aggregator
   - Filters for ERROR and FATAL lines
   - Groups identical errors (same message, same file) into buckets
@@ -685,7 +674,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 4.2 — Anomaly Detection
 **Assigned to:** `@MonitorAgent`
 
-- [x] **4.2.1** Create `agents/monitor/anomaly-detector.js`:
+- [x] **4.2.1** Create `backend/agents/monitor/anomaly-detector.js`:
   - Baseline calculation: rolling average of last 7 days same time window
   - Anomaly thresholds:
     - Error rate > baseline × 3: **ALERT**
@@ -695,13 +684,13 @@ These are the subagents. Each one owns specific tasks in the plan below.
     - New error message not seen before: **ALERT**
   - Deduplication: same alert not re-fired within 15 minutes
 
-- [x] **4.2.2** Create `agents/monitor/predictive-analyzer.js`:
+- [x] **4.2.2** Create `backend/agents/monitor/predictive-analyzer.js`:
   - Memory trend: linear regression over last 2 hours
   - If projected to hit 100% within 4 hours: fire PREDICTIVE alert
   - Disk space trend: same logic
   - Alert payload: `{ type: "predictive", metric, current_value, projected_breach_at, confidence }`
 
-- [x] **4.2.3** Create `agents/monitor/correlated-alerter.js`:
+- [x] **4.2.3** Create `backend/agents/monitor/correlated-alerter.js`:
   - Groups alerts that fire within 2 minutes of each other into one INCIDENT
   - Avoids alert storms (50 notifications for one outage → 1 incident notification)
   - Each incident has: severity (P1/P2/P3/P4), affected_services, started_at
@@ -711,8 +700,8 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 4.3 — SLO Tracking
 **Assigned to:** `@MonitorAgent`
 
-- [x] **4.3.1** Create `agents/monitor/slo-tracker.js`:
-  - Define SLOs in `config/slos.json`:
+- [x] **4.3.1** Create `backend/agents/monitor/slo-tracker.js`:
+  - Define SLOs in `backend/config/slos.json`:
     ```json
     [
       { "name": "API Uptime", "target": 99.9, "window_days": 30 },
@@ -747,7 +736,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 5.1 — Auto-Rollback
 **Assigned to:** `@HealerAgent`
 
-- [x] **5.1.1** Create `agents/healer/auto-rollback.js`:
+- [x] **5.1.1** Create `backend/agents/healer/auto-rollback.js`:
   - Trigger condition: error rate > 10× baseline for > 3 minutes post-deploy
   - Actions:
     1. Fetch rollback plan from `deployments` table for most recent deploy
@@ -767,7 +756,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 5.2 — Self-Healing Actions
 **Assigned to:** `@HealerAgent`
 
-- [x] **5.2.1** Create `agents/healer/healing-actions.js` — library of healing actions:
+- [x] **5.2.1** Create `backend/agents/healer/healing-actions.js` — library of healing actions:
   ```javascript
   const HEALING_ACTIONS = {
     pod_oom: {
@@ -793,14 +782,14 @@ These are the subagents. Each one owns specific tasks in the plan below.
   }
   ```
 
-- [x] **5.2.2** Create `agents/healer/action-executor.js`:
+- [x] **5.2.2** Create `backend/agents/healer/action-executor.js`:
   - Before executing any action: log intent to `incidents` table with status `pending`
   - Execute action with 120s timeout
   - After execution: run verify command
   - If verify passes: update status to `resolved`
   - If verify fails: update status to `healer_failed`, alert human immediately
 
-- [x] **5.2.3** Create `agents/healer/hotfix-suggester.js`:
+- [x] **5.2.3** Create `backend/agents/healer/hotfix-suggester.js`:
   - When RCA identifies a specific file + line causing failure
   - Calls Claude API with the failing code and error message
   - Generates a one-line or small patch fix
@@ -813,7 +802,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 5.3 — UiPath Healing Agent Integration
 **Assigned to:** `@HealerAgent`
 
-- [x] **5.3.1** Create `integrations/uipath/healing-agent.js`:
+- [x] **5.3.1** Create `backend/integrations/uipath/healing-agent.js`:
   - Connect to UiPath Orchestrator API
   - Function: `triggerHealingProcess(processName, inputArgs)` → starts a UiPath process
   - Use this for UI-based healing (e.g., restarting a web app via its admin UI when API is unavailable)
@@ -845,12 +834,12 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 6.1 — Vector Knowledge Base
 **Assigned to:** `@MemoryAgent`
 
-- [x] **6.1.1** Create `agents/memory/knowledge-indexer.js`:
+- [x] **6.1.1** Create `backend/agents/memory/knowledge-indexer.js`:
   - After every resolved incident: embed the `root_cause + resolution` text using Claude embeddings API
   - Store vector in Qdrant collection named `incident_knowledge`
   - Metadata: `{ incident_id, failure_type, repo, resolution_time_minutes, success }`
 
-- [x] **6.1.2** Create `agents/memory/knowledge-retriever.js`:
+- [x] **6.1.2** Create `backend/agents/memory/knowledge-retriever.js`:
   - Input: new error message or log snippet
   - Embed the input
   - Search Qdrant for top-5 similar past incidents
@@ -862,12 +851,12 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 6.2 — Runbook Builder
 **Assigned to:** `@MemoryAgent`
 
-- [x] **6.2.1** Create `agents/memory/runbook-builder.js`:
+- [x] **6.2.1** Create `backend/agents/memory/runbook-builder.js`:
   - Query `incidents` table for same `root_cause` pattern appearing > 3 times
   - For repeated incidents: call Claude API to codify the fix into a step-by-step runbook
   - Save runbook to `runbooks` table with `trigger_pattern` (regex that matches the error)
 
-- [x] **6.2.2** Create `agents/memory/runbook-matcher.js`:
+- [x] **6.2.2** Create `backend/agents/memory/runbook-matcher.js`:
   - On each new incident: check if `root_cause` matches any `trigger_pattern` in `runbooks` table
   - If match found: include runbook steps in Slack notification
   - After auto-healing succeeds using a runbook: increment `success_count` on that runbook
@@ -877,12 +866,12 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 6.3 — Team Pattern Learning
 **Assigned to:** `@MemoryAgent`
 
-- [x] **6.3.1** Create `agents/memory/pattern-learner.js`:
+- [x] **6.3.1** Create `backend/agents/memory/pattern-learner.js`:
   - After each incident with blame attribution: upsert to `team_patterns` table
   - Track: which author emails cause which failure types most often
   - Example insights: "author@email.com has caused 4 test_failure incidents in last 14 days"
 
-- [x] **6.3.2** Create `agents/memory/postmortem-generator.js`:
+- [x] **6.3.2** Create `backend/agents/memory/postmortem-generator.js`:
   - Triggered when incident is marked resolved
   - Calls Claude API with full incident timeline (from `incidents` table)
   - Generates structured postmortem:
@@ -915,7 +904,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 7.1 — Chat API
 **Assigned to:** `@UIAgent`
 
-- [x] **7.1.1** Create `api/src/routes/chat.js` — `POST /api/chat`:
+- [x] **7.1.1** Create `backend/src/routes/chat.js` — `POST /api/chat`:
   - Input: `{ message: string, conversation_history: [] }`
   - System prompt for the chat agent:
     ```
@@ -975,7 +964,7 @@ These are the subagents. Each one owns specific tasks in the plan below.
 ### 8.1 — UiPath Maestro Orchestration
 **Assigned to:** `@OrchestratorAgent`
 
-- [x] **8.1.1** Create `integrations/uipath/maestro.js`:
+- [x] **8.1.1** Create `backend/integrations/uipath/maestro.js`:
   - Connect to UiPath Orchestrator API
   - Function: `startOrchestration(processName, inputs)` → triggers a Maestro-managed multi-agent flow
   - Function: `getOrchestrationStatus(jobId)` → polls job status

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { pgPool } = require('../../../config/database');
+const { pgPool } = require('../../config/database');
 
 // GET /api/incidents - Get incidents list
 router.get('/', async (req, res) => {

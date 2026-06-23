@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { handleWebhook } = require('../../../integrations/github/webhook');
-const { handleSlackAction } = require('../../../integrations/slack/actions');
-const { handleSlackCommand } = require('../../../integrations/slack/commands');
+const { handleWebhook } = require('../../integrations/github/webhook');
+const { handleSlackAction } = require('../../integrations/slack/actions');
+const { handleSlackCommand } = require('../../integrations/slack/commands');
 
 // POST /webhooks/github - GitHub webhook receiver
 router.post('/github', handleWebhook);

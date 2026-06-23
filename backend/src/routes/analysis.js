@@ -9,7 +9,7 @@ router.post('/gate', async (req, res) => {
       return res.status(400).json({ error: 'Missing required parameters: rawDiff' });
     }
 
-    const { evaluateGate } = require('../../../agents/gatekeeper/gate-decision');
+    const { evaluateGate } = require('../../agents/gatekeeper/gate-decision');
     const report = await evaluateGate({
       rawDiff,
       files: files || [],
@@ -41,7 +41,7 @@ router.post('/rca', async (req, res) => {
       return res.status(400).json({ error: 'Missing required parameters: logs' });
     }
 
-    const { analyzeFailure } = require('../../../agents/analysis/rca-engine');
+    const { analyzeFailure } = require('../../agents/analysis/rca-engine');
     const rcaReport = await analyzeFailure({
       logs,
       diff: diff || '',
@@ -53,7 +53,7 @@ router.post('/rca', async (req, res) => {
     let blameReport = null;
     if (repo && commitSha) {
       try {
-        const { attributeBlame } = require('../../../agents/analysis/blame-attribution');
+        const { attributeBlame } = require('../../agents/analysis/blame-attribution');
         blameReport = await attributeBlame({
           owner: 'generic',
           repo,

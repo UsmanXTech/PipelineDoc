@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const databaseConfig = require('../../config/database');
+const databaseConfig = require('../../backend/config/database');
 
 const originalPgPool = databaseConfig.pgPool;
 const originalRedisClient = databaseConfig.redisClient;
@@ -21,7 +21,7 @@ databaseConfig.pgPool = {
   }
 };
 
-const { generateRollbackPlan, getRollbackPlan } = require('../../agents/planner/rollback-planner');
+const { generateRollbackPlan, getRollbackPlan } = require('../../backend/agents/planner/rollback-planner');
 
 test('Rollback Planner - generates and encrypts/decrypts rollback plan successfully', async () => {
   const deploymentId = '550e8400-e29b-41d4-a716-446655440000';

@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 
 // 1. Mock config/anthropic
-const anthropic = require('../../config/anthropic');
+const anthropic = require('../../backend/config/anthropic');
 const originalCreate = anthropic.messages.create;
 const mockClaudeResponse = {
   content: [
@@ -27,7 +27,7 @@ anthropic.messages.create = async () => {
 };
 
 // 2. Mock config/database pgPool
-const databaseConfig = require('../../config/database');
+const databaseConfig = require('../../backend/config/database');
 const mockIncidents = [];
 databaseConfig.pgPool = {
   query: async (sql, params) => {
@@ -48,7 +48,7 @@ databaseConfig.pgPool = {
 };
 
 // 3. Mock GitHub client methods for blame
-const githubClient = require('../../integrations/github/client');
+const githubClient = require('../../backend/integrations/github/client');
 const originalGetCommit = githubClient.getCommit;
 const originalGetFileCommits = githubClient.getFileCommits;
 
@@ -81,9 +81,9 @@ githubClient.getFileCommits = async (owner, repo, path, limit) => {
   ];
 };
 
-const { analyzeFailure } = require('../../agents/analysis/rca-engine');
-const { attributeBlame } = require('../../agents/analysis/blame-attribution');
-const { detectFlakiness } = require('../../agents/analysis/flaky-detector');
+const { analyzeFailure } = require('../../backend/agents/analysis/rca-engine');
+const { attributeBlame } = require('../../backend/agents/analysis/blame-attribution');
+const { detectFlakiness } = require('../../backend/agents/analysis/flaky-detector');
 
 test('RCA Engine - analyzeFailure runs Claude diagnosis and inserts to DB', async () => {
   const result = await analyzeFailure({
@@ -132,7 +132,7 @@ test.after(() => {
   githubClient.getCommit = originalGetCommit;
   githubClient.getFileCommits = originalGetFileCommits;
 
-  const { pgPool, redisClient } = require('../../config/database');
+  const { pgPool, redisClient } = require('../../backend/config/database');
   if (pgPool && typeof pgPool.end === 'function') {
     pgPool.end().catch(() => {});
   }

@@ -39,7 +39,7 @@ Deploy the platform in minutes:
 ### 1. Copy Environment Keys
 ```bash
 cp .env.example .env
-cp .env.example api/.env
+cp .env.example backend/.env
 ```
 Update `.env` with your API credentials (e.g. `ANTHROPIC_API_KEY`, `JWT_SECRET`).
 

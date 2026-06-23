@@ -1,4 +1,4 @@
-const { pgPool } = require('../config/database');
+const { pgPool } = require('../backend/config/database');
 const crypto = require('crypto');
 require('dotenv').config();
 

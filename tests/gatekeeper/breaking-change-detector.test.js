@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { detectBreakingChanges } = require('../../agents/gatekeeper/breaking-change-detector');
+const { detectBreakingChanges } = require('../../backend/agents/gatekeeper/breaking-change-detector');
 
 test('Breaking Change Detector - detects database column drops', () => {
   const diff = `diff --git a/migrations/v2.sql b/migrations/v2.sql

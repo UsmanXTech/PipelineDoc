@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { selectStrategy } = require('../../agents/planner/strategy-selector');
+const { selectStrategy } = require('../../backend/agents/planner/strategy-selector');
 
 test('Strategy Selector - selects maintenance window when DB migration is present', () => {
   const result = selectStrategy({ riskScore: 10, hasDbMigration: true });

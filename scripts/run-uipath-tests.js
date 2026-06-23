@@ -1,4 +1,4 @@
-const { triggerTestSuite, pollTestResults } = require('../integrations/uipath/test-cloud');
+const { triggerTestSuite, pollTestResults } = require('../backend/integrations/uipath/test-cloud');
 require('dotenv').config();
 
 async function run() {

@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const databaseConfig = require('../../config/database');
-const { setupPipeline } = require('../../api/src/services/github');
+const databaseConfig = require('../../backend/config/database');
+const { setupPipeline } = require('../../backend/src/services/github');
 
 test('GitHub Pipeline Setup Service - connects successfully in Mock mode', async () => {
   // Mock PG Pool query returning a mock github access token

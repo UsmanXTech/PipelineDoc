@@ -4,7 +4,7 @@ PipelineDoc is powered by a multi-agent cooperative architecture. Each agent is 
 
 ---
 
-## 1. Gatekeeper Agent (`agents/gatekeeper/`)
+## 1. Gatekeeper Agent (`backend/agents/gatekeeper/`)
 
 The **Gatekeeper Agent** enforces static and dynamic compliance filters on incoming pull requests.
 
@@ -16,7 +16,7 @@ The **Gatekeeper Agent** enforces static and dynamic compliance filters on incom
 
 ---
 
-## 2. Planner Agent (`agents/planner/`)
+## 2. Planner Agent (`backend/agents/planner/`)
 
 The **Planner Agent** schedules deployment orchestration phases and constructs auto-rollback pathways.
 
@@ -27,7 +27,7 @@ The **Planner Agent** schedules deployment orchestration phases and constructs a
 
 ---
 
-## 3. FailureDoctor Agent / Analysis Agent (`agents/analysis/`)
+## 3. FailureDoctor Agent / Analysis Agent (`backend/agents/analysis/`)
 
 The **FailureDoctor Agent** acts as an AI-powered diagnostic engine when workflows break.
 
@@ -38,7 +38,7 @@ The **FailureDoctor Agent** acts as an AI-powered diagnostic engine when workflo
 
 ---
 
-## 4. Healer Agent (`agents/healer/`)
+## 4. Healer Agent (`backend/agents/healer/`)
 
 The **Healer Agent** executes automated remediation runbooks to recover from deployment anomalies.
 
@@ -47,7 +47,7 @@ The **Healer Agent** executes automated remediation runbooks to recover from dep
 
 ---
 
-## 5. Monitor Agent (`agents/monitor/`)
+## 5. Monitor Agent (`backend/agents/monitor/`)
 
 The **Monitor Agent** watches microservices health, compliance targets, and exposes application telemetry.
 

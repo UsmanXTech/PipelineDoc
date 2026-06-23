@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const databaseConfig = require('../../config/database');
-const anthropic = require('../../config/anthropic');
+const databaseConfig = require('../../backend/config/database');
+const anthropic = require('../../backend/config/anthropic');
 const axios = require('axios');
 
 const originalPgPool = databaseConfig.pgPool;
@@ -121,9 +121,9 @@ async function waitForResponsePost(url) {
 }
 
 // Import code routes under test
-const chatRouter = require('../../api/src/routes/chat');
-const webhooksRouter = require('../../api/src/routes/webhooks');
-const commands = require('../../integrations/slack/commands');
+const chatRouter = require('../../backend/src/routes/chat');
+const webhooksRouter = require('../../backend/src/routes/webhooks');
+const commands = require('../../backend/integrations/slack/commands');
 
 test('Chat Router - POST /api/chat returns SSE stream text', async () => {
   anthropicMessagesCreated = [];

@@ -1,8 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const databaseConfig = require('../../config/database');
-const slackClient = require('../../integrations/slack/client');
-const { generateRollbackPlan } = require('../../agents/planner/rollback-planner');
+const databaseConfig = require('../../backend/config/database');
+const slackClient = require('../../backend/integrations/slack/client');
+const { generateRollbackPlan } = require('../../backend/agents/planner/rollback-planner');
 
 const originalPgPool = databaseConfig.pgPool;
 const originalRedisClient = databaseConfig.redisClient;
@@ -31,7 +31,7 @@ slackClient.sendSlackMessage = async (msg) => {
   return { ok: true };
 };
 
-const { executeDeployment } = require('../../agents/planner/deploy-coordinator');
+const { executeDeployment } = require('../../backend/agents/planner/deploy-coordinator');
 
 test('Deploy Coordinator - runs successful deployment and logs stages', async () => {
   dbQueries = [];

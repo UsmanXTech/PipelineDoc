@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { pgPool } = require('../../../config/database');
-const config = require('../../../config/uipath');
+const { pgPool } = require('../../config/database');
+const config = require('../../config/uipath');
 
 // GET /api/uipath - Check connection state, configuration, and mapped processes
 router.get('/', async (req, res) => {

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { checkSLOs } = require('../../../agents/monitor/slo-tracker');
+const { checkSLOs } = require('../../agents/monitor/slo-tracker');
 
 // GET /api/slos - Returns all SLOs with compliance percentage
 router.get('/', async (req, res) => {

@@ -14,7 +14,9 @@ pipelinedoc/
 ├── docker-compose.yml          # Container configuration for PostgreSQL and Redis databases
 ├── .env.example                # Sample template for environment variables
 │
-├── api/                       # --- Backend API Gateway ---
+├── backend/            # Express API server, agents, config, integrations
+  │   ├── src/
+  │     │     │   └── backend/integrations/                       # --- Backend API Gateway ---
 │   ├── package.json           # Backend dependency configuration
 │   └── src/
 │       ├── index.js           # API entry point (registers middlewares & routes)
@@ -33,7 +35,7 @@ pipelinedoc/
 │       ├── pages/             # UI views (Overview, Chat assistant, Intelligence, UiPathHub)
 │       └── services/          # API fetch wrapper
 │
-├── agents/                    # --- Autonomous AI Agent Logic (Reusable Node modules) ---
+├── backend/agents/                    # --- Autonomous AI Agent Logic (Reusable Node modules) ---
 │   ├── orchestrator/          # Master coordinator (routes actions between agents)
 │   ├── analysis/              # Failure Doctor log/diff analyzer and RCA logic
 │   ├── gatekeeper/            # Pre-deployment risk analyzer and security scanner
@@ -42,7 +44,7 @@ pipelinedoc/
 │   ├── healer/                # Remediations executor and automated rollbacks trigger
 │   └── memory/                # Postmortem generator and knowledge base retriever
 │
-├── integrations/              # --- Connector Clients to External Systems ---
+├── backend/integrations/              # --- Connector Clients to External Systems ---
 │   ├── github/                # PR info retrieval, comments poster, and diff extractor
 │   ├── uipath/                # Unattended robot execution client & Queue Transaction pusher
 │   ├── slack/                 # Channel notifier and commands listener
@@ -93,10 +95,10 @@ sequenceDiagram
 
 If you want to add a new specialist agent (e.g., a **Security Auditor Agent** that performs SAST analysis before deployment):
 
-1. **Create the module file**: Under `agents/gatekeeper/` or `agents/security/` (e.g., `agents/gatekeeper/sast-scanner.js`).
+1. **Create the module file**: Under `backend/agents/gatekeeper/` or `backend/agents/security/` (e.g., `backend/agents/gatekeeper/sast-scanner.js`).
    ```javascript
-   // agents/gatekeeper/sast-scanner.js
-   const aiClient = require('../../config/ai-client');
+   // backend/agents/gatekeeper/sast-scanner.js
+   const aiClient = require('../../backend/config/ai-client');
 
    async function scanCodeForVulnerabilities(codeDiff) {
      const prompt = `Analyze this code change for security bugs. Return a JSON output containing "severity" (low, medium, high) and "issues" list:\n\n${codeDiff}`;
@@ -113,13 +115,13 @@ If you want to add a new specialist agent (e.g., a **Security Auditor Agent** th
    module.exports = { scanCodeForVulnerabilities };
    ```
 
-2. **Integrate into the Gatekeeper decision layer**: Open `agents/gatekeeper/gate-decision.js` and import your scanner to incorporate its findings into the risk score formula.
-3. **Register in the Chat Router (for conversational triggers)**: Open `api/src/routes/chat.js` and add a tool description to the `toolsList` so the Autopilot LLM can run the security scan on-demand.
+2. **Integrate into the Gatekeeper decision layer**: Open `backend/agents/gatekeeper/gate-decision.js` and import your scanner to incorporate its findings into the risk score formula.
+3. **Register in the Chat Router (for conversational triggers)**: Open `backend/src/routes/chat.js` and add a tool description to the `toolsList` so the Autopilot LLM can run the security scan on-demand.
 4. **Write Tests**: Create `tests/gatekeeper/sast-scanner.test.js` mimicking standard mocks.
    ```javascript
    const test = require('node:test');
    const assert = require('node:assert');
-   const sastScanner = require('../../agents/gatekeeper/sast-scanner');
+   const sastScanner = require('../../backend/agents/gatekeeper/sast-scanner');
    
    test('SAST Scanner returns mock issues list', async () => {
      // Run scanner and assert values...
@@ -132,7 +134,7 @@ If you want to add a new specialist agent (e.g., a **Security Auditor Agent** th
 
 To connect to a custom platform (e.g., deploying to **Kubernetes via ArgoCD** instead of UiPath):
 
-1. **Create a client module**: Under `integrations/argocd/client.js`.
+1. **Create a client module**: Under `backend/integrations/argocd/client.js`.
    ```javascript
    const axios = require('axios');
    require('dotenv').config();
@@ -153,18 +155,18 @@ To connect to a custom platform (e.g., deploying to **Kubernetes via ArgoCD** in
    module.exports = { syncApplication };
    ```
 2. **Add credential vars to environment**: Add `ARGOCD_URL` and `ARGOCD_TOKEN` keys to `.env.example` and load them in configuration files.
-3. **Link into deployment coordinator**: Open `agents/planner/deploy-coordinator.js` and import the client, substituting or complementing the `triggerUiPathJob` commands.
+3. **Link into deployment coordinator**: Open `backend/agents/planner/deploy-coordinator.js` and import the client, substituting or complementing the `triggerUiPathJob` commands.
 
 ---
 
 ### 3. Swapping the LLM Provider (Alternative Models)
 
-PipelineDoc uses a unified client model inside `config/ai-client.js` that abstracts both Google Gemini (standard) and Anthropic Claude APIs. 
+PipelineDoc uses a unified client model inside `backend/config/ai-client.js` that abstracts both Google Gemini (standard) and Anthropic Claude APIs. 
 
 To use alternative model endpoints (such as a local **Ollama** or **Azure OpenAI**):
 
 1. Install the appropriate SDK, e.g. `@azure/openai`.
-2. Open `config/ai-client.js`.
+2. Open `backend/config/ai-client.js`.
 3. Add a check inside `getProvider()` to return your custom client and rewrite the wrapper call:
    ```javascript
    // Example mapping Azure OpenAI inside generateContent:

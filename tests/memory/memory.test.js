@@ -3,9 +3,9 @@ const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
 
-const databaseConfig = require('../../config/database');
-const slackClient = require('../../integrations/slack/client');
-const anthropic = require('../../config/anthropic');
+const databaseConfig = require('../../backend/config/database');
+const slackClient = require('../../backend/integrations/slack/client');
+const anthropic = require('../../backend/config/anthropic');
 
 // Save original configurations/functions to restore them later
 const originalPgPool = databaseConfig.pgPool;
@@ -184,13 +184,13 @@ Postgres container restarted.
 };
 
 // Import code modules to test
-const indexer = require('../../agents/memory/knowledge-indexer');
-const retriever = require('../../agents/memory/knowledge-retriever');
-const runbookBuilder = require('../../agents/memory/runbook-builder');
-const runbookMatcher = require('../../agents/memory/runbook-matcher');
-const patternLearner = require('../../agents/memory/pattern-learner');
-const postmortemGenerator = require('../../agents/memory/postmortem-generator');
-const resolver = require('../../agents/memory/incident-resolver');
+const indexer = require('../../backend/agents/memory/knowledge-indexer');
+const retriever = require('../../backend/agents/memory/knowledge-retriever');
+const runbookBuilder = require('../../backend/agents/memory/runbook-builder');
+const runbookMatcher = require('../../backend/agents/memory/runbook-matcher');
+const patternLearner = require('../../backend/agents/memory/pattern-learner');
+const postmortemGenerator = require('../../backend/agents/memory/postmortem-generator');
+const resolver = require('../../backend/agents/memory/incident-resolver');
 
 test('Knowledge Indexer & Retriever - indexes text and performs local cosine similarity search', async () => {
   // Clear local vectors cache
@@ -302,7 +302,7 @@ test.after(() => {
   slackClient.sendSlackMessage = originalSlackSendMessage;
   anthropic.messages.create = originalAnthropicMessagesCreate;
 
-  const { pgPool, redisClient } = require('../../config/database');
+  const { pgPool, redisClient } = require('../../backend/config/database');
   if (pgPool && typeof pgPool.end === 'function') {
     pgPool.end().catch(() => {});
   }

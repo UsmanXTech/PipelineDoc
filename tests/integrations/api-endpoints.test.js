@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const databaseConfig = require('../../config/database');
-const anthropic = require('../../config/anthropic');
+const databaseConfig = require('../../backend/config/database');
+const anthropic = require('../../backend/config/anthropic');
 
 // Mock PG Pool queries
 let dbQueries = [];
@@ -41,8 +41,8 @@ anthropic.messages.create = async () => {
   };
 };
 
-const deploymentsRouter = require('../../api/src/routes/deployments');
-const analysisRouter = require('../../api/src/routes/analysis');
+const deploymentsRouter = require('../../backend/src/routes/deployments');
+const analysisRouter = require('../../backend/src/routes/analysis');
 
 test('REST API Endpoints - POST /api/deployments creates deployment session', async () => {
   dbQueries = [];
@@ -149,7 +149,7 @@ test('REST API Endpoints - POST /api/analysis/rca executes diagnostics', async (
   assert.strictEqual(jsonSent.confidence, 90);
 });
 
-const healthRouter = require('../../api/src/routes/health');
+const healthRouter = require('../../backend/src/routes/health');
 const axios = require('axios');
 
 test('Health Endpoints - GET /db returns connected when pgPool query succeeds', async () => {

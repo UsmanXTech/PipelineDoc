@@ -35,7 +35,7 @@ The application reads configuration parameters from environmental variables. Cop
 cp .env.example .env
 
 # In the API directory
-cp .env.example api/.env
+cp .env.example backend/.env
 ```
 
 Open `.env` and fill in the required keys:

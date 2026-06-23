@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const databaseConfig = require('../../../config/database');
+const databaseConfig = require('../../config/database');
 const axios = require('axios');
 
 // Database Connection Health Check

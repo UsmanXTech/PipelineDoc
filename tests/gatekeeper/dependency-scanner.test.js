@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 const axios = require('axios');
-const { extractNewDependencies, scanDependencies } = require('../../agents/gatekeeper/dependency-scanner');
+const { extractNewDependencies, scanDependencies } = require('../../backend/agents/gatekeeper/dependency-scanner');
 
 // Mock axios
 const originalPost = axios.post;

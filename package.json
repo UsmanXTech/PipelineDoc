@@ -3,15 +3,15 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "api",
+    "backend",
     "frontend",
     "cli"
   ],
   "scripts": {
-    "bootstrap": "npm install && npm install --workspace=api && npm install --workspace=frontend && npm install --workspace=cli",
-    "dev:api": "npm run dev --workspace=api",
+    "bootstrap": "npm install && npm install --workspace=backend && npm install --workspace=frontend && npm install --workspace=cli",
+    "dev:backend": "npm run dev --workspace=backend",
     "dev:frontend": "npm run dev --workspace=frontend",
-    "dev": "npm run dev --workspace=api & npm run dev --workspace=frontend",
+    "dev": "npm run dev --workspace=backend & npm run dev --workspace=frontend",
     "build:frontend": "npm run build --workspace=frontend",
     "test": "LLM_PROVIDER=anthropic node --test tests/**/*.test.js",
     "simulate": "node scripts/generate-telemetry.js",

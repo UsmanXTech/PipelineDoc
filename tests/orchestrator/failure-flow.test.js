@@ -2,12 +2,12 @@ const test = require('node:test');
 const assert = require('node:assert');
 
 // Mock dependecies
-const githubClient = require('../../integrations/github/client');
-const rcaEngine = require('../../agents/analysis/rca-engine');
-const blameAttribution = require('../../agents/analysis/blame-attribution');
-const flakyDetector = require('../../agents/analysis/flaky-detector');
-const slackClient = require('../../integrations/slack/client');
-const prCommenter = require('../../integrations/github/pr-commenter');
+const githubClient = require('../../backend/integrations/github/client');
+const rcaEngine = require('../../backend/agents/analysis/rca-engine');
+const blameAttribution = require('../../backend/agents/analysis/blame-attribution');
+const flakyDetector = require('../../backend/agents/analysis/flaky-detector');
+const slackClient = require('../../backend/integrations/slack/client');
+const prCommenter = require('../../backend/integrations/github/pr-commenter');
 
 // Store original methods
 const originalGetWorkflowLogs = githubClient.getWorkflowLogs;
@@ -52,7 +52,7 @@ prCommenter.postPRDiagnosisComment = async () => {
   return { id: 1122 };
 };
 
-const { runFailureFlow } = require('../../agents/orchestrator/failure-flow');
+const { runFailureFlow } = require('../../backend/agents/orchestrator/failure-flow');
 
 test('Orchestrator - runFailureFlow executes entire failure flow successfully', async () => {
   const result = await runFailureFlow({
@@ -85,7 +85,7 @@ test.after(() => {
   slackClient.sendDiagnosisAlert = originalSendDiagnosisAlert;
   prCommenter.postPRDiagnosisComment = originalPostPRDiagnosisComment;
 
-  const { pgPool, redisClient } = require('../../config/database');
+  const { pgPool, redisClient } = require('../../backend/config/database');
   if (pgPool && typeof pgPool.end === 'function') {
     pgPool.end().catch(() => {});
   }

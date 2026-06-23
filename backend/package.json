@@ -1,7 +1,7 @@
 {
-  "name": "pipelinedoc-api",
+  "name": "pipelinedoc-backend",
   "version": "1.0.0",
-  "description": "PipelineDoc API Server",
+  "description": "PipelineDoc Backend API Server and Agent Processors",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",

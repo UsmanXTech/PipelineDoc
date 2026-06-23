@@ -6,7 +6,7 @@ const axios = require('axios');
 const originalPost = axios.post;
 axios.post = async () => ({ data: {} });
 
-const { evaluateGate } = require('../../agents/gatekeeper/gate-decision');
+const { evaluateGate } = require('../../backend/agents/gatekeeper/gate-decision');
 
 test('Gate Decision - PASS status on low-risk clean PRs', async () => {
   const diff = `diff --git a/src/Button.js b/src/Button.js
@@ -117,7 +117,7 @@ test('Gate Decision - applies penalty (+15) if UiPath suite is flaky', async () 
 });
 
 test.after(() => {
-  const { pgPool, redisClient } = require('../../config/database');
+  const { pgPool, redisClient } = require('../../backend/config/database');
   if (pgPool && typeof pgPool.end === 'function') {
     pgPool.end().catch(() => {});
   }

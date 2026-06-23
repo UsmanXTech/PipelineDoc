@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const databaseConfig = require('../../../config/database');
+const databaseConfig = require('../../config/database');
 
 // GET /api/deployments - Get deployments list
 router.get('/', async (req, res) => {
@@ -47,7 +47,7 @@ router.post('/:id/rollback', async (req, res) => {
       return res.json({ success: true, deploymentId, status: 'rolling_back', mocked: true });
     }
 
-    const { executeRollback } = require('../../../agents/planner/deploy-coordinator');
+    const { executeRollback } = require('../../agents/planner/deploy-coordinator');
     // Execute rollback in background
     executeRollback(deploymentId).catch(err => {
       console.error(`Error executing rollback for ${deploymentId}:`, err);
@@ -92,7 +92,7 @@ router.post('/', async (req, res) => {
 
     // Trigger strategy and rollback plan in background
     try {
-      const { generateRollbackPlan } = require('../../../agents/planner/rollback-planner');
+      const { generateRollbackPlan } = require('../../agents/planner/rollback-planner');
       await generateRollbackPlan({
         deploymentId,
         repo,
@@ -103,7 +103,7 @@ router.post('/', async (req, res) => {
       console.error('Failed to generate rollback plan in API POST /deployments:', err.message);
     }
 
-    const { selectStrategy } = require('../../../agents/planner/strategy-selector');
+    const { selectStrategy } = require('../../agents/planner/strategy-selector');
     const strategyPlan = selectStrategy({
       riskScore: 0,
       hasDbMigration: deployStrategy === 'maintenance window'
@@ -111,7 +111,7 @@ router.post('/', async (req, res) => {
     strategyPlan.strategy = deployStrategy;
 
     // Run coordinator in background
-    const { executeDeployment } = require('../../../agents/planner/deploy-coordinator');
+    const { executeDeployment } = require('../../agents/planner/deploy-coordinator');
     executeDeployment(deploymentId, strategyPlan, {
       pollIntervalMs: process.env.NODE_ENV === 'test' ? 5 : 15000
     }).catch(err => {
@@ -188,7 +188,7 @@ router.patch('/:id', async (req, res) => {
 
     // If status is failure, trigger automated root cause diagnostics
     if (status === 'failure') {
-      const { runFailureFlow } = require('../../../agents/orchestrator/failure-flow');
+      const { runFailureFlow } = require('../../agents/orchestrator/failure-flow');
       runFailureFlow({
         owner: 'generic',
         repo: updatedDeploy.repo,

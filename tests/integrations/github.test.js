@@ -47,7 +47,7 @@ axios.create = function() {
   };
 };
 
-const client = require('../../integrations/github/client');
+const client = require('../../backend/integrations/github/client');
 
 test('GitHub Client - getWorkflowLogs fetches and compiles logs for failed jobs', async () => {
   const logs = await client.getWorkflowLogs('owner', 'repo', 123);

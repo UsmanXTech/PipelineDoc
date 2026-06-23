@@ -3,8 +3,8 @@ const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
 
-const { ingestLogs, stripAnsi, stripTimestamp } = require('../../agents/analysis/log-ingester');
-const { parseDiff } = require('../../agents/analysis/diff-parser');
+const { ingestLogs, stripAnsi, stripTimestamp } = require('../../backend/agents/analysis/log-ingester');
+const { parseDiff } = require('../../backend/agents/analysis/diff-parser');
 
 test('Log Ingester - Strips ANSI Escape Sequences', () => {
   const input = '\u001b[31mFAIL\u001b[0m tests/api.test.js';

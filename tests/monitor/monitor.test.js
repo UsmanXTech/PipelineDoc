@@ -3,8 +3,8 @@ const assert = require('node:assert');
 const fs = require('fs').promises;
 const path = require('path');
 
-const databaseConfig = require('../../config/database');
-const slackClient = require('../../integrations/slack/client');
+const databaseConfig = require('../../backend/config/database');
+const slackClient = require('../../backend/integrations/slack/client');
 
 // Save original configurations
 const originalPgPool = databaseConfig.pgPool;
@@ -127,12 +127,12 @@ slackClient.sendSlackMessage = async (msg) => {
 };
 
 // Require modules to test
-const { collectMetrics, generateMockMetrics } = require('../../agents/monitor/metrics-collector');
-const { parseErrorLogLine, processLogs } = require('../../agents/monitor/log-streamer');
-const { checkAnomalies, checkNewErrors } = require('../../agents/monitor/anomaly-detector');
-const { performRegression, checkPredictions } = require('../../agents/monitor/predictive-analyzer');
-const { correlateAlerts, getAlertSeverity } = require('../../agents/monitor/correlated-alerter');
-const { checkSLOs } = require('../../agents/monitor/slo-tracker');
+const { collectMetrics, generateMockMetrics } = require('../../backend/agents/monitor/metrics-collector');
+const { parseErrorLogLine, processLogs } = require('../../backend/agents/monitor/log-streamer');
+const { checkAnomalies, checkNewErrors } = require('../../backend/agents/monitor/anomaly-detector');
+const { performRegression, checkPredictions } = require('../../backend/agents/monitor/predictive-analyzer');
+const { correlateAlerts, getAlertSeverity } = require('../../backend/agents/monitor/correlated-alerter');
+const { checkSLOs } = require('../../backend/agents/monitor/slo-tracker');
 
 // Clean up mocks after all tests are done
 test.after(() => {

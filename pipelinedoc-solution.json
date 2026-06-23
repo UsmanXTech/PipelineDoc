@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "PipelineDoc Intelligent reliability agent processes",
   "entryPoints": [
-    "integrations/uipath/healing-agent.js",
-    "integrations/uipath/maestro.js",
-    "integrations/uipath/test-cloud.js"
+    "backend/integrations/uipath/healing-agent.js",
+    "backend/integrations/uipath/maestro.js",
+    "backend/integrations/uipath/test-cloud.js"
   ],
   "dependencies": {
     "axios": "^1.18.0"

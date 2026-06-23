@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 
-const databaseConfig = require('../../config/database');
+const databaseConfig = require('../../backend/config/database');
 const originalPgPool = databaseConfig.pgPool;
 
 // Setup a global mock pool that delegates query calls dynamically
@@ -16,7 +16,7 @@ databaseConfig.pgPool = {
 };
 
 // Now import the router after mocking the pool configuration
-const router = require('../../api/src/routes/uipath');
+const router = require('../../backend/src/routes/uipath');
 
 test('UiPath Router - GET / returns connection metadata', async () => {
   const route = router.stack.find(s => s.route && s.route.path === '/' && s.route.methods.get);

@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { resolveDependencies } = require('../../agents/planner/dependency-resolver');
+const { resolveDependencies } = require('../../backend/agents/planner/dependency-resolver');
 
 test('Dependency Resolver - sorts dependencies correctly (auth-service first)', () => {
   const result = resolveDependencies(['frontend-app', 'auth-service', 'payment-service']);

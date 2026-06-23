@@ -1,12 +1,12 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const databaseConfig = require('../../config/database');
+const databaseConfig = require('../../backend/config/database');
 
 // Keep references to original config properties
 const originalPgPool = databaseConfig.pgPool;
 const originalRedisClient = databaseConfig.redisClient;
 
-const { calculateRiskScore } = require('../../agents/gatekeeper/risk-scorer');
+const { calculateRiskScore } = require('../../backend/agents/gatekeeper/risk-scorer');
 
 test('Risk Scorer - Low risk changes', async () => {
   const files = [

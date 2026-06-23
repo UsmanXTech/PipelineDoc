@@ -4,9 +4,9 @@ const { exec } = require('child_process');
 const util = require('util');
 const execPromise = util.promisify(exec);
 
-const databaseConfig = require('../../config/database');
-const slackClient = require('../../integrations/slack/client');
-const anthropic = require('../../config/anthropic');
+const databaseConfig = require('../../backend/config/database');
+const slackClient = require('../../backend/integrations/slack/client');
+const anthropic = require('../../backend/config/anthropic');
 const axios = require('axios');
 
 const originalPgPool = databaseConfig.pgPool;
@@ -26,7 +26,7 @@ anthropic.messages.create = async () => ({
   content: [{ text: '{"root_cause":"Connection refused","failure_type":"environment_issue","fixes":[]}' }]
 });
 
-const maestro = require('../../integrations/uipath/maestro');
+const maestro = require('../../backend/integrations/uipath/maestro');
 
 test('Maestro - startOrchestration in non-prod returns mock job details', async () => {
   const result = await maestro.startOrchestration('FailureDoctorFlow', { repo: 'payment-service' });
@@ -43,7 +43,7 @@ test('Maestro - getOrchestrationStatus in non-prod returns mock status details',
 
 test('Maestro - runFailureDoctorFlow executes sequence successfully', async () => {
   // Mock githubClient methods
-  const githubClient = require('../../integrations/github/client');
+  const githubClient = require('../../backend/integrations/github/client');
   const originalGetWorkflowLogs = githubClient.getWorkflowLogs;
   const originalGetCommitDiff = githubClient.getCommitDiff;
   const originalGetCommit = githubClient.getCommit;
@@ -79,7 +79,7 @@ test('Maestro - runFailureDoctorFlow executes sequence successfully', async () =
 
 test('Maestro - runDeployFlow executes sequence and reports success', async () => {
   // Mock dependency calls
-  const gatekeeper = require('../../agents/gatekeeper/gate-decision');
+  const gatekeeper = require('../../backend/agents/gatekeeper/gate-decision');
   const originalEvaluateGate = gatekeeper.evaluateGate;
   gatekeeper.evaluateGate = async () => ({
     decision: 'PASS',

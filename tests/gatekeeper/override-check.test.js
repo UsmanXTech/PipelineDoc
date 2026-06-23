@@ -2,12 +2,12 @@ const test = require('node:test');
 const assert = require('node:assert');
 
 // Mock githubClient
-const githubClient = require('../../integrations/github/client');
+const githubClient = require('../../backend/integrations/github/client');
 const originalGetPRDetails = githubClient.getPRDetails;
 const originalGetPRReviews = githubClient.getPRReviews;
 
 // Mock databaseConfig
-const databaseConfig = require('../../config/database');
+const databaseConfig = require('../../backend/config/database');
 const mockIncidents = [];
 databaseConfig.pgPool = {
   query: async (sql, params) => {
@@ -16,7 +16,7 @@ databaseConfig.pgPool = {
   }
 };
 
-const { checkGateOverride } = require('../../agents/gatekeeper/override-check');
+const { checkGateOverride } = require('../../backend/agents/gatekeeper/override-check');
 
 test('Override Check - returns false if label is missing', async () => {
   githubClient.getPRDetails = async () => ({
@@ -70,7 +70,7 @@ test.after(() => {
   githubClient.getPRReviews = originalGetPRReviews;
   databaseConfig.pgPool = null;
 
-  const { pgPool, redisClient } = require('../../config/database');
+  const { pgPool, redisClient } = require('../../backend/config/database');
   if (pgPool && typeof pgPool.end === 'function') {
     pgPool.end().catch(() => {});
   }

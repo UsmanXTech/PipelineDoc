@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { scanSecrets } = require('../../agents/gatekeeper/secret-detector');
+const { scanSecrets } = require('../../backend/agents/gatekeeper/secret-detector');
 
 test('Secret Detector - flags hardcoded GitHub personal access tokens', () => {
   const diff = `diff --git a/app.js b/app.js

@@ -4,9 +4,9 @@ const fs = require('fs').promises;
 const path = require('path');
 const axios = require('axios');
 
-const databaseConfig = require('../../config/database');
-const slackClient = require('../../integrations/slack/client');
-const anthropic = require('../../config/anthropic');
+const databaseConfig = require('../../backend/config/database');
+const slackClient = require('../../backend/integrations/slack/client');
+const anthropic = require('../../backend/config/anthropic');
 
 // Save original objects
 const originalPgPool = databaseConfig.pgPool;
@@ -160,12 +160,12 @@ test.beforeEach(() => {
 });
 
 // Import Healer files
-const { evaluateAutoRollback, cancelRollback, approveRollbackNow, executeRollbackSteps, activeTimeouts } = require('../../agents/healer/auto-rollback');
-const { HEALING_ACTIONS } = require('../../agents/healer/healing-actions');
-const { executeHealingAction } = require('../../agents/healer/action-executor');
-const { suggestHotfix } = require('../../agents/healer/hotfix-suggester');
-const { triggerMappedHealing, HEALING_PROCESS_MAP } = require('../../integrations/uipath/healing-agent');
-const { handleSlackAction } = require('../../integrations/slack/actions');
+const { evaluateAutoRollback, cancelRollback, approveRollbackNow, executeRollbackSteps, activeTimeouts } = require('../../backend/agents/healer/auto-rollback');
+const { HEALING_ACTIONS } = require('../../backend/agents/healer/healing-actions');
+const { executeHealingAction } = require('../../backend/agents/healer/action-executor');
+const { suggestHotfix } = require('../../backend/agents/healer/hotfix-suggester');
+const { triggerMappedHealing, HEALING_PROCESS_MAP } = require('../../backend/integrations/uipath/healing-agent');
+const { handleSlackAction } = require('../../backend/integrations/slack/actions');
 
 // --- Auto-Rollback Tests ---
 test('Auto-Rollback - evaluateAutoRollback returns false if no recent deploy', async () => {

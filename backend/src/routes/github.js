@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const databaseConfig = require('../../../config/database');
+const databaseConfig = require('../../config/database');
 const { setupPipeline, getGithubToken } = require('../services/github');
 
 // GET /api/github/repos - List user's repositories

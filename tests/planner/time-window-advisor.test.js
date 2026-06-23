@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const databaseConfig = require('../../config/database');
+const databaseConfig = require('../../backend/config/database');
 
 const originalPgPool = databaseConfig.pgPool;
 const originalRedisClient = databaseConfig.redisClient;
@@ -15,7 +15,7 @@ databaseConfig.pgPool = {
   })
 };
 
-const { getRecommendedWindows } = require('../../agents/planner/time-window-advisor');
+const { getRecommendedWindows } = require('../../backend/agents/planner/time-window-advisor');
 
 test('Time Window Advisor - returns top 3 recommended windows', async () => {
   const result = await getRecommendedWindows();

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const anthropic = require('../../../config/ai-client');
-const databaseConfig = require('../../../config/database');
+const anthropic = require('../../config/ai-client');
+const databaseConfig = require('../../config/database');
 
 const toolsList = [
   {
@@ -122,7 +122,7 @@ async function executeTool(name, input, userId) {
       return result.rows[0] || null;
     }
     case 'get_slo_status': {
-      const { checkSLOs } = require('../../../agents/monitor/slo-tracker');
+      const { checkSLOs } = require('../../agents/monitor/slo-tracker');
       const report = await checkSLOs();
       return report.results;
     }
@@ -146,7 +146,7 @@ async function executeTool(name, input, userId) {
 
       // Generate default rollback plan
       try {
-        const { generateRollbackPlan } = require('../../../agents/planner/rollback-planner');
+        const { generateRollbackPlan } = require('../../agents/planner/rollback-planner');
         await generateRollbackPlan({
           deploymentId,
           repo,
@@ -158,7 +158,7 @@ async function executeTool(name, input, userId) {
       }
 
       // Select strategy details
-      const { selectStrategy } = require('../../../agents/planner/strategy-selector');
+      const { selectStrategy } = require('../../agents/planner/strategy-selector');
       const strategyPlan = selectStrategy({
         riskScore: 0,
         hasDbMigration: strategy === 'maintenance window'
@@ -166,7 +166,7 @@ async function executeTool(name, input, userId) {
       strategyPlan.strategy = strategy; // use user-specified strategy
 
       // Run executeDeployment in background
-      const { executeDeployment } = require('../../../agents/planner/deploy-coordinator');
+      const { executeDeployment } = require('../../agents/planner/deploy-coordinator');
       executeDeployment(deploymentId, strategyPlan, {
         pollIntervalMs: process.env.NODE_ENV === 'test' ? 5 : 15000
       }).catch(err => {
@@ -181,7 +181,7 @@ async function executeTool(name, input, userId) {
         return { success: true, deploymentId, status: 'rolling_back' };
       }
 
-      const { executeRollback } = require('../../../agents/planner/deploy-coordinator');
+      const { executeRollback } = require('../../agents/planner/deploy-coordinator');
       // Run in background
       executeRollback(deploymentId).catch(err => {
         console.error(`Error executing rollback for ${deploymentId}:`, err);
@@ -191,8 +191,8 @@ async function executeTool(name, input, userId) {
     }
     case 'get_risk_score': {
       const prNumber = input.pr_number;
-      const githubClient = require('../../../integrations/github/client');
-      const { evaluateGate } = require('../../../agents/gatekeeper/gate-decision');
+      const githubClient = require('../../integrations/github/client');
+      const { evaluateGate } = require('../../agents/gatekeeper/gate-decision');
 
       const owner = process.env.GITHUB_OWNER || 'owner';
       const repo = process.env.GITHUB_REPO || 'pipelinedoc';
@@ -218,7 +218,7 @@ async function executeTool(name, input, userId) {
       return { pr_number: prNumber, risk_score: report.risk_score, decision: report.decision, reason: report.reason };
     }
     case 'get_uipath_status': {
-      const config = require('../../../config/uipath');
+      const config = require('../../config/uipath');
       const mockMode = process.env.NODE_ENV !== 'production';
       return {
         status: 'Connected',

@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 
 // Mock components
-const webhook = require('../../integrations/github/webhook');
+const webhook = require('../../backend/integrations/github/webhook');
 
 test('GitHub Webhook Handler - rejects invalid signature with 401', async () => {
   let statusResult = null;
@@ -81,7 +81,7 @@ test('GitHub Webhook Handler - bypasses signature in test and processes event', 
 });
 
 test('GitHub Webhook Handler - handlePullRequest triggers gate evaluation and creates check run', async () => {
-  const githubClient = require('../../integrations/github/client');
+  const githubClient = require('../../backend/integrations/github/client');
   const originalGetCommit = githubClient.getCommit;
   const originalCreateCheckRun = githubClient.createCheckRun;
   const originalUpdateCheckRun = githubClient.updateCheckRun;
@@ -139,7 +139,7 @@ diff --git a/src/index.js b/src/index.js
 });
 
 test('GitHub Webhook Handler - handlePullRequest blocks PR containing secrets and checks override', async () => {
-  const githubClient = require('../../integrations/github/client');
+  const githubClient = require('../../backend/integrations/github/client');
   const originalGetCommit = githubClient.getCommit;
   const originalCreateCheckRun = githubClient.createCheckRun;
   const originalUpdateCheckRun = githubClient.updateCheckRun;
@@ -211,7 +211,7 @@ diff --git a/src/index.js b/src/index.js
 });
 
 test.after(() => {
-  const { pgPool, redisClient } = require('../../config/database');
+  const { pgPool, redisClient } = require('../../backend/config/database');
   if (pgPool && typeof pgPool.end === 'function') {
     pgPool.end().catch(() => {});
   }
