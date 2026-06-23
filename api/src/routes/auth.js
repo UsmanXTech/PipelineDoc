@@ -97,6 +97,17 @@ router.post('/github/callback', async (req, res) => {
     // We hash a placeholder password since they authenticate via GitHub
     const passwordHash = `github:${githubId}`;
     
+    const REQUIRE_PRE_REGISTERED = process.env.REQUIRE_PRE_REGISTERED === 'true';
+    const ALLOWED_DOMAINS = process.env.ALLOWED_DOMAINS ? process.env.ALLOWED_DOMAINS.split(',').map(d => d.trim().toLowerCase()) : [];
+
+    // Check domain whitelist if configured
+    if (ALLOWED_DOMAINS.length > 0) {
+      const userDomain = email.split('@')[1]?.toLowerCase();
+      if (!userDomain || !ALLOWED_DOMAINS.includes(userDomain)) {
+        return res.status(403).json({ error: 'Access forbidden: Your email domain is not whitelisted' });
+      }
+    }
+
     let userResult = await pgPool.query(
       'SELECT id, email, name FROM users WHERE email = $1',
       [email.toLowerCase().trim()]
@@ -104,6 +115,11 @@ router.post('/github/callback', async (req, res) => {
 
     let user;
     if (userResult.rows.length === 0) {
+      // If pre-registration is required, block unknown users
+      if (REQUIRE_PRE_REGISTERED) {
+        return res.status(403).json({ error: 'Access forbidden: User is not pre-registered in the system' });
+      }
+
       // Insert new user
       const insertResult = await pgPool.query(
         'INSERT INTO users (email, password_hash, name) VALUES ($1, $2, $3) RETURNING id, email, name',
