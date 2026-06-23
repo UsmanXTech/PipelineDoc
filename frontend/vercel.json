@@ -7,6 +7,10 @@
     {
       "source": "/webhooks/:path*",
       "destination": "http://150.230.171.47:3000/webhooks/:path*"
+    },
+    {
+      "source": "/((?!api|webhooks).*)",
+      "destination": "/index.html"
     }
   ]
 }
