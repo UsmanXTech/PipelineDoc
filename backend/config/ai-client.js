@@ -36,17 +36,17 @@ function mapClaudeMessagesToGemini(messages) {
           parts.push({ text: block.text });
         } else if (block.type === 'tool_use') {
           toolIdToName[block.id] = block.name;
-          const functionCall = {
-            name: block.name,
-            args: block.input
+          const part = {
+            functionCall: {
+              name: block.name,
+              args: block.input
+            }
           };
           const thoughtSig = block.thought_signature || block.thoughtSignature || block.thought;
           if (thoughtSig) {
-            functionCall.thoughtSignature = thoughtSig;
+            part.thoughtSignature = thoughtSig;
           }
-          parts.push({
-            functionCall
-          });
+          parts.push(part);
         } else if (block.type === 'tool_result') {
           // Deduce tool name from ID mapping or parsing
           const name = toolIdToName[block.tool_use_id] || block.tool_use_id.replace(/^call_/, '').replace(/_\d+$/, '');
@@ -172,7 +172,7 @@ const aiClient = {
               id: `call_${call.name}_${callIndex++}`,
               name: call.name,
               input: call.args,
-              thought_signature: call.thoughtSignature || call.thought_signature || call.thought
+              thought_signature: part.thoughtSignature || part.thought_signature || part.thought || call.thoughtSignature || call.thought_signature || call.thought
             });
           }
         });
