@@ -36,13 +36,13 @@ jobs:
       - name: Set up .NET (for UiPath CLI)
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '6.0.x'
+          dotnet-version: '8.0.x'
 
       - name: Download UiPath CLI
         run: |
           set -o pipefail
           mkdir -p uipath-cli
-          URL="https://uipath.gallery.vsassets.io/_apis/public/gallery/publisher/UiPath/extension/UiPathIntegrationService/2.0.0/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage"
+          URL="https://pkgs.dev.azure.com/uipath/5b98d55c-1b14-4a03-893f-7a59746f1246/_packaging/1c781268-d43d-45ab-9dfc-0151a1c740b7/nuget/v3/flat2/uipath.cli.linux/25.10.20/uipath.cli.linux.25.10.20.nupkg"
           echo "Downloading UiPath CLI from: $URL"
           # follow redirects and fail on HTTP errors
           curl -fSL -o uipath-cli.zip "$URL" || { echo "ERROR: curl failed (HTTP error or network issue). Showing partial file for debugging:"; head -n 200 uipath-cli.zip || true; exit 1; }
@@ -50,8 +50,10 @@ jobs:
           file uipath-cli.zip || true
           # verify zip integrity / list contents
           if unzip -l uipath-cli.zip >/dev/null 2>&1; then
-            echo "ZIP looks valid; extracting uipcli.dll"
-            unzip -p uipath-cli.zip "extension/uipcli/uipcli.dll" > ./uipath-cli/uipcli.dll
+            echo "ZIP looks valid; extracting uipcli and dependencies"
+            unzip -q uipath-cli.zip "tools/net8.0/any/*" -d ./uipath-cli
+            mv ./uipath-cli/tools/net8.0/any/* ./uipath-cli/
+            rm -rf ./uipath-cli/tools
             echo "UiPath CLI uipcli.dll successfully extracted."
           else
             echo "ERROR: downloaded file is not a valid zip. Showing first 200 lines for debugging:"
