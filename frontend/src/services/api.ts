@@ -186,10 +186,14 @@ export interface Incident {
 
 export interface SLOCompliance {
   name: string;
-  description: string;
   target: number;
-  actual: number;
-  compliant: boolean;
+  window_days: number;
+  compliance_percent: number;
+  error_budget_total_mins: number;
+  error_budget_remaining_mins: number;
+  error_budget_remaining_percent: number;
+  burn_rate: number;
+  hours_to_exhaust: number | null;
 }
 
 export interface UiPathJob {

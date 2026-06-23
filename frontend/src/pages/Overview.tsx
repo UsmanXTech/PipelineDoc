@@ -143,8 +143,8 @@ export default function Overview() {
 
   const sloChartData = slos.map(s => ({
     name: s.name.substring(0, 12) + '...',
-    Actual: s.actual * 100,
-    Target: s.target * 100
+    Actual: s.compliance_percent,
+    Target: s.target
   }));
 
   return (
@@ -172,7 +172,7 @@ export default function Overview() {
           </div>
           <div className="mt-4">
             <h3 className="text-4xl font-black tracking-swiss-tight text-white leading-none">
-              {slos.length > 0 ? `${(slos.reduce((acc, s) => acc + s.actual, 0) / slos.length * 100).toFixed(2)}%` : '99.8%'}
+              {slos.length > 0 ? `${(slos.reduce((acc, s) => acc + s.compliance_percent, 0) / slos.length).toFixed(2)}%` : '99.8%'}
             </h3>
             <p className="text-[10px] text-blue-500 flex items-center mt-2 space-x-1 font-medium font-mono">
               <TrendingUp className="w-3 h-3" />
