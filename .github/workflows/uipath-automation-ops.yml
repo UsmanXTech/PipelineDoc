@@ -40,10 +40,24 @@ jobs:
 
       - name: Download UiPath CLI
         run: |
+          set -o pipefail
           mkdir -p uipath-cli
-          curl -L -o uipath-cli.zip https://uipath.gallery.vsassets.io/_apis/public/gallery/publisher/UiPath/extension/UiPathIntegrationService/2.0.0/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage
-          unzip -p uipath-cli.zip "extension/uipcli/uipcli.dll" > ./uipath-cli/uipcli.dll
-          echo "UiPath CLI uipcli.dll successfully extracted."
+          URL="https://uipath.gallery.vsassets.io/_apis/public/gallery/publisher/UiPath/extension/UiPathIntegrationService/2.0.0/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage"
+          echo "Downloading UiPath CLI from: $URL"
+          # follow redirects and fail on HTTP errors
+          curl -fSL -o uipath-cli.zip "$URL" || { echo "ERROR: curl failed (HTTP error or network issue). Showing partial file for debugging:"; head -n 200 uipath-cli.zip || true; exit 1; }
+          # quick file type check
+          file uipath-cli.zip || true
+          # verify zip integrity / list contents
+          if unzip -l uipath-cli.zip >/dev/null 2>&1; then
+            echo "ZIP looks valid; extracting uipcli.dll"
+            unzip -p uipath-cli.zip "extension/uipcli/uipcli.dll" > ./uipath-cli/uipcli.dll
+            echo "UiPath CLI uipcli.dll successfully extracted."
+          else
+            echo "ERROR: downloaded file is not a valid zip. Showing first 200 lines for debugging:"
+            head -n 200 uipath-cli.zip || true
+            exit 1
+          fi
 
       - name: Pack UiPath Solution
         run: |
