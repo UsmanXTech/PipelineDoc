@@ -93,10 +93,21 @@ const toolsList = [
       },
       required: ['process_name']
     }
+  },
+  {
+    name: 'setup_github_pipeline',
+    description: 'Automatically setup a PipelineDoc CI pipeline for a user\'s GitHub repository by creating a pipelinedoc-ci branch and committing the GitHub Actions workflow file.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        repo: { type: 'string', description: 'The full name of the repository (e.g., owner/repo)' }
+      },
+      required: ['repo']
+    }
   }
 ];
 
-async function executeTool(name, input) {
+async function executeTool(name, input, userId) {
   const pgPool = databaseConfig.pgPool;
 
   switch (name) {
@@ -243,6 +254,13 @@ async function executeTool(name, input) {
         robot,
         message: `Successfully executed manual UiPath job run ${jobId} for process ${processName}`
       };
+    }
+    case 'setup_github_pipeline': {
+      const { setupPipeline } = require('../services/github');
+      if (!userId) {
+        throw new Error('User authentication is required to setup GitHub pipeline');
+      }
+      return await setupPipeline(userId, input.repo, pgPool);
     }
     default:
       throw new Error(`Unknown tool: ${name}`);
@@ -438,7 +456,7 @@ CRITICAL: If asked to take an action (such as triggering a deploy, triggering a 
 
           let result;
           try {
-            result = await executeTool(toolCall.name, toolCall.input);
+            result = await executeTool(toolCall.name, toolCall.input, userId);
           } catch (err) {
             result = { error: err.message };
           }

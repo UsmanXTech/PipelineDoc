@@ -8,6 +8,7 @@ import DeployProgress from './pages/DeployProgress';
 import UiPathHub from './pages/UiPathHub';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
+import GithubSetup from './pages/GithubSetup';
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
                   <Route path="/chat" element={<Chat />} />
                   <Route path="/intelligence" element={<Intelligence />} />
                   <Route path="/uipath-hub" element={<UiPathHub />} />
+                  <Route path="/github-setup" element={<GithubSetup />} />
                   <Route path="/incidents/:id" element={<IncidentDetails />} />
                   <Route path="/deployments/:id" element={<DeployProgress />} />
                   <Route path="*" element={<Navigate to="/" replace />} />

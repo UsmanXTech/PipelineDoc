@@ -38,10 +38,12 @@ const metricsRoute = require('./routes/metrics');
 const uipathRoute = require('./routes/uipath');
 const healthRoute = require('./routes/health');
 const authRoute = require('./routes/auth');
+const githubRoute = require('./routes/github');
 
 const authMiddleware = require('./middleware/auth');
 
 app.use('/api/auth', authRoute);
+app.use('/api/github', authMiddleware, githubRoute);
 app.use('/api/deployments', authMiddleware, deploymentsRoute);
 app.use('/api/incidents', authMiddleware, incidentsRoute);
 app.use('/api/analysis', authMiddleware, analysisRoute);

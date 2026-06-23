@@ -7,8 +7,12 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
   name TEXT NOT NULL,
+  github_access_token TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Ensure column exists on existing databases
+ALTER TABLE users ADD COLUMN IF NOT EXISTS github_access_token TEXT;
 
 -- Table: conversations
 CREATE TABLE IF NOT EXISTS conversations (

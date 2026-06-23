@@ -15,7 +15,7 @@ const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI || '';
 // GET /api/auth/github/url - Get authorization URL
 router.get('/github/url', (req, res) => {
   if (GITHUB_CLIENT_ID) {
-    const scope = 'user:email';
+    const scope = 'user:email,repo,workflow';
     const url = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(GITHUB_REDIRECT_URI)}&scope=${scope}`;
     return res.json({ success: true, isMock: false, url });
   } else {
@@ -41,12 +41,14 @@ router.post('/github/callback', async (req, res) => {
     let email = '';
     let name = '';
     let githubId = '';
+    let accessToken = '';
 
     // Handle Mock Authentication Flow
     if (code === 'mock-github-code' || !GITHUB_CLIENT_ID) {
       email = 'github-user@pipelinedoc.local';
       name = 'GitHub Tester';
       githubId = 'mock-github-id-12345';
+      accessToken = 'mock-github-access-token-12345';
     } else {
       // Real GitHub OAuth Flow
       // 1. Exchange code for access token
@@ -63,7 +65,7 @@ router.post('/github/callback', async (req, res) => {
         }
       );
 
-      const accessToken = tokenResponse.data.access_token;
+      accessToken = tokenResponse.data.access_token;
       if (!accessToken) {
         return res.status(400).json({ error: 'Invalid or expired OAuth code' });
       }
@@ -122,12 +124,17 @@ router.post('/github/callback', async (req, res) => {
 
       // Insert new user
       const insertResult = await pgPool.query(
-        'INSERT INTO users (email, password_hash, name) VALUES ($1, $2, $3) RETURNING id, email, name',
-        [email.toLowerCase().trim(), passwordHash, name]
+        'INSERT INTO users (email, password_hash, name, github_access_token) VALUES ($1, $2, $3, $4) RETURNING id, email, name',
+        [email.toLowerCase().trim(), passwordHash, name, accessToken]
       );
       user = insertResult.rows[0];
     } else {
-      user = userResult.rows[0];
+      // Update existing user's access token and name
+      const updateResult = await pgPool.query(
+        'UPDATE users SET github_access_token = $1, name = $2 WHERE id = $3 RETURNING id, email, name',
+        [accessToken, name, userResult.rows[0].id]
+      );
+      user = updateResult.rows[0];
     }
 
     // Generate JWT token (expiring in 10 minutes)

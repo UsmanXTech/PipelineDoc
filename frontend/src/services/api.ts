@@ -307,4 +307,28 @@ export const triggerUiPathJob = async (processName: string, inputArguments?: any
   return response.data;
 };
 
+export interface GitHubRepo {
+  id: number;
+  full_name: string;
+  description: string | null;
+  html_url: string;
+}
+
+export interface SetupPipelineResponse {
+  success: boolean;
+  message: string;
+  branch: string;
+  workflowFile: string;
+}
+
+export const getGitHubRepos = async (): Promise<GitHubRepo[]> => {
+  const response = await api.get('/api/github/repos');
+  return response.data;
+};
+
+export const setupGitHubPipeline = async (repo: string): Promise<SetupPipelineResponse> => {
+  const response = await api.post('/api/github/setup-pipeline', { repo });
+  return response.data;
+};
+
 export default api;

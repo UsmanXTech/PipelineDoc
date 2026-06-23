@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, MessageSquare, BrainCircuit, Activity, Cpu, LogOut } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, BrainCircuit, Activity, Cpu, LogOut, GitBranch } from 'lucide-react';
 import { getAuthenticatedUser, logout } from '../services/api';
 
 interface LayoutProps {
@@ -20,6 +20,7 @@ export default function Layout({ children }: LayoutProps) {
   const menuItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'AI Assistant', path: '/chat', icon: MessageSquare },
+    { name: 'GitHub Pipelines', path: '/github-setup', icon: GitBranch },
     { name: 'Intelligence', path: '/intelligence', icon: BrainCircuit },
     { name: 'UiPath Hub', path: '/uipath-hub', icon: Cpu },
   ];
